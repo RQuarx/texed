@@ -28,13 +28,13 @@ public:
     /// \param arg short arg form
     /// \param long_arg long arg form
     /// \return will return true if arg or long_arg is detected, else false
-    bool Arg(std::string arg, std::string long_arg = nullptr);
+    bool Arg(std::string arg, std::string long_arg = "");
 
     /// Returns the option given to an arg
     /// \param arg short arg form
     /// \param long_arg long arg form
     /// \return will return the option if found, else will return an empty string `""`
-    std::string Arg_Option(std::string arg, std::string long_arg = nullptr);
+    std::string Arg_Option(std::string arg, std::string long_arg = "");
 
     /// Searches for an arg containing a file path
     /// \return returns the file path if found, else returns nullopt

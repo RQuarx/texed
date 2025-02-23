@@ -1,14 +1,16 @@
-# Define the project
-project('texed', 'cpp', version: '0.1.0', default_options: ['cpp_std=c++17'])
+project(
+    'texed',
+    'cpp',
+    version: 'Der_Kuchen_ist_eine_Lüge',
+    default_options: ['cpp_std=c++23']
+)
 
-# Compiler options
 compile_flags = ['-O3', '-Wall', '-Wextra', '-Wno-unused-parameter']
 dependencies = [
-  dependency('SDL3'),
-  dependency('SDL3_ttf')
+   dependency('SDL3'),
+   dependency('SDL3_ttf')
 ]
 
-# Source directory
 src_dir = 'src/'
 src_files = files(
     src_dir + 'input_handler.cpp',
@@ -21,11 +23,7 @@ src_files = files(
 
 )
 
-# Create the executable
 executable('texed', src_files,
-  cpp_args: compile_flags,
-  dependencies: dependencies
+    cpp_args: compile_flags,
+    dependencies: dependencies
 )
-
-# Optionally, you can define a custom target for cleaning
-# However, Meson handles cleaning automatically, so this is not necessary.
