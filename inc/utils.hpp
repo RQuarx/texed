@@ -5,8 +5,6 @@
 
 #include <string>
 
-#define loop while (true)
-
 // Colours
 #define COL_RESET "\e[0;0;0m"
 #define COL_ERR "\e[1;31m"
@@ -62,3 +60,20 @@ void Log_Info(const char *fmt, ...);
 /// \param ... additional paramerer for format string
 __attribute__((__format__ (__printf__, 1, 2)))
 void Log_Debug(const char *fmt, ...);
+
+/// Invert color
+/// \param color color to be inverted
+/// \return will return an SDL_Color of the inverted color
+SDL_Color Invert_Color(SDL_Color color);
+
+/// Checks if the whole str is a whitespace char
+/// \param str string to be checked
+/// \return true on true, false on false
+bool Is_Space(std::string str);
+
+/// Get the width of the string for a font
+/// \param font the font to query
+/// \param text text to calculate
+/// \param w will be filled with the width in pixel
+/// \return true on success and false on failure
+bool Get_String_Width(TTF_Font *font, std::string text, int32_t *w);

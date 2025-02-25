@@ -8,12 +8,12 @@
 #include "../inc/editor.hpp"
 
 #define HELP_MSG \
-"Usage: texed [options] [file]\n\n" \
-"Options:\n" \
-" -h,--help                      show this message\n" \
-" -v,--version                   show program version\n" \
-" -V,--Verbose                   show logs\n" \
-" -f,--file                      specify the path\n"
+    "Usage: texed [options] [file]\n\n" \
+    "Options:\n" \
+    " -h,--help                      show this message\n" \
+    " -v,--version                   show program version\n" \
+    " -V,--Verbose                   show logs\n" \
+    " -f,--file                      specify the path\n"
 
 
 class

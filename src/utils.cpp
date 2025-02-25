@@ -38,19 +38,18 @@ Trim_String(std::string &str, Direction trim_direction)
 bool
 Is_Alpha(std::string str)
 {
-    for (auto c : str)
-        if (!std::isalpha(c))
-            return false;
-    return true;
+    return std::all_of(
+        str.begin(),
+        str.end(),
+        [](int8_t c){ return std::isalpha(c); }
+    );
 }
 
 
 bool
 Get_Font_Size(TTF_Font *font, int32_t *w, int32_t *h)
 {
-    if (
-        !TTF_GetStringSize(font, "A", 0, w, h)
-    ) {
+    if (!TTF_GetStringSize(font, "A", 0, w, h)) {
         Log_Err("Failed to get string size");
         return false;
     }
@@ -153,4 +152,46 @@ void Log_Debug(const char *fmt, ...)
         );
         free(log_message);
     }
+}
+
+
+SDL_Color
+Invert_Color(SDL_Color color)
+{
+    return {
+        static_cast<uint8_t>(255 - color.r),
+        static_cast<uint8_t>(255 - color.g),
+        static_cast<uint8_t>(255 - color.b),
+        color.a
+    };
+}
+
+
+bool
+Is_Space(std::string str)
+{
+    return std::all_of(
+        str.begin(),
+        str.end(),
+        [](uint8_t c){ return std::isspace(c); }
+    );
+}
+
+
+bool
+Get_String_Width(TTF_Font *font, std::string text, int32_t *w)
+{
+    if (
+        !TTF_GetStringSize(
+            font,
+            text.c_str(),
+            0,
+            w,
+            NULL
+        )
+    ) {
+        Log_Err("Failed to get string width");
+        return false;
+    }
+    return true;
 }

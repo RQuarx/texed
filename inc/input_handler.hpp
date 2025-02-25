@@ -13,7 +13,7 @@ public:
     /// Handles scancode inputs
     /// \param EditorData _EditorData struct
     /// \param scancode user input as scancode
-    static SDL_AppResult Handle(_EditorData *EditorData, SDL_Scancode scancode);
+    static bool Handle(_EditorData *EditorData, SDL_Scancode scancode);
 
     InputHandler() = delete;
 private:

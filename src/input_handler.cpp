@@ -1,20 +1,26 @@
 #include "../inc/input_handler.hpp"
+#include "../inc/movement.hpp"
 
 
-SDL_AppResult
+bool
 InputHandler::Handle(_EditorData *EditorData, SDL_Scancode scancode)
 {
     switch (scancode) {
     case SDL_SCANCODE_BACKSPACE:
-        Handle_Backspace(EditorData, SDL_GetModState() | SDL_KMOD_LCTRL);
-        break;
+        return Handle_Backspace(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
     case SDL_SCANCODE_UP:
-        break;
+        return Movement::Move_Cursor_Up(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+    case SDL_SCANCODE_DOWN:
+        return Movement::Move_Cursor_Down(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+    case SDL_SCANCODE_LEFT:
+        return Movement::Move_Cursor_Left(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+    case SDL_SCANCODE_RIGHT:
+        return Movement::Move_Cursor_Right(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
     default:
         break;
     }
 
-    return SDL_APP_CONTINUE;
+    return false;
 }
 
 

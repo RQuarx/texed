@@ -8,6 +8,7 @@
 #include <fstream>
 #include <string>
 #include <cmath>
+#include <array>
 
 
 std::optional<_EditorData>
@@ -40,15 +41,15 @@ bool
 Editor::Render_Loop(AppData *AppData, Offset offset)
 {
     auto EditorData = &AppData->EditorData;
-
-    // Used to make it only render the necesarry lines
-    const int32_t line_height = TTF_GetFontHeight(AppData->font);
-    int32_t window_height;
+    auto cursor = &EditorData->cursor;
+    int32_t line_height = TTF_GetFontHeight(AppData->font);
+    int32_t window_height = 0;
+    bool cursor_rendered = false;
 
     if (
         !SDL_GetWindowSizeInPixels(
             AppData->window,
-            nullptr,
+            NULL,
             &window_height
         )
     ) {
@@ -63,60 +64,50 @@ Editor::Render_Loop(AppData *AppData, Offset offset)
 
     // Starts off offset with the input offset
     uint32_t y_offset = offset.y;
-    size_t i = EditorData->scroll_offset;
 
-    loop {
-        if (i >= EditorData->last_rendered_line) break;
+    for (size_t i = EditorData->scroll_offset; i < EditorData->last_rendered_line; i++) {
+        std::string line = EditorData->file_content[i];
+        Offset render_offset = { 0, y_offset };
+        int32_t line_number_width;
+        int32_t text_padding;
+
         /*
         Renders line index and
         gets the width of the line index for the text offset
         */
-        size_t line_index =
-            EditorData->scroll_offset + (y_offset - offset.y) / line_height;
-        if (line_index >= EditorData->last_rendered_line) break;
+        if (!Render_Line_Number(AppData, i, y_offset, line_number_width)) return false;
+        if (!Get_String_Width(AppData->font, "  ", &text_padding)) return false;
 
-        int32_t line_number_width;
-        Render_Line_Number(AppData, i, y_offset, line_number_width);
-        line_number_width += offset.x;
-
-        int32_t text_padding;
+        render_offset.x = offset.x + line_number_width + text_padding;
 
         if (
-            !TTF_GetStringSize(
-                AppData->font,
-                "  ",
-                0,
-                &text_padding,
-                nullptr
-            )
+            !cursor_rendered &&
+            cursor->y <= EditorData->last_rendered_line &&
+            cursor->y >= EditorData->scroll_offset
         ) {
-            Log_Err("Failed to get text padding size");
-            return false;
+            int64_t cursor_y = y_offset - (EditorData->scroll_offset * line_height);
+            if (!Render_Cursor(AppData, { render_offset.x, cursor_y })) return false;
+            cursor_rendered = true;
         }
 
-        // Renders editor text
         if (
-            !Render_Text(
-                AppData,
-                EditorData->file_content[i],
-                {(uint32_t)line_number_width + text_padding, y_offset},
-                foreground
-            )
-        ) return false;
+            AppData->focused &&
+            AppData->EditorData.mode == Normal &&
+            cursor->y == i
+        ) {
+            if (
+                !Render_Inverted_Text(
+                    AppData,
+                    line,
+                    render_offset,
+                    foreground,
+                    { (int64_t)cursor->x, (int64_t)cursor->x }
+                )
+            ) return false;
+        } else if (!Render_Text(AppData, line, render_offset, foreground))
+            return false;
 
         y_offset += line_height;
-        i++;
-
-        if (
-            EditorData->cursor.y <= EditorData->last_rendered_line &&
-            !Render_Cursor(
-                AppData,
-                {
-                    offset.x + line_number_width + text_padding,
-                    offset.y
-                }
-            )
-        ) return false;
     }
 
     return true;
@@ -162,6 +153,54 @@ Editor::Render_Text(
     SDL_DestroyTexture(texture);
 
     return return_val;
+}
+
+
+bool
+Editor::Render_Inverted_Text(
+    struct AppData *AppData,
+    std::string line,
+    struct Offset Offset,
+    SDL_Color color,
+    struct Range range
+)
+{
+    if (
+        range.start > (int64_t)line.size() ||
+        range.end >= (int64_t)line.size() ||
+        range.start > range.end
+    ) {
+        Log_Err("Invalid start or end value: %lu %lu", range.start, range.end);
+        return false;
+    }
+
+    std::array<std::string, 3> text = {
+        (range.start ? line.substr(0, range.start) : ""),
+        line.substr(range.start, (range.end + 1) - range.start),
+        (range.end >= (int64_t)line.length() ? "" : line.substr(range.end + 1))
+    };
+
+    std::array<int32_t, 3> str_offset = {0};
+
+    for (uint8_t i = 0; i < text.size(); i++) {
+        if (i != 2 && !Get_String_Width(AppData->font, text[i], &str_offset[i + 1]))
+            return false;
+        str_offset[i] += (i ? str_offset[i - 1] : Offset.x);
+
+        if (
+            !text[i].empty() &&
+            !Render_Text(
+                AppData,
+                text[i],
+                { (uint32_t)str_offset[i], Offset.y },
+                (i == 1 ? Invert_Color(color) : color)
+            )
+        ) {
+            Log_Err("Failed to render text");
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -218,9 +257,39 @@ Editor::Render_Line_Number(
 bool
 Editor::Render_Cursor(AppData *AppData, Offset Offset)
 {
-    if (!RenderCursor::Hollow(cursor, AppData, Offset)) {
-        Log_Err("Failed to render cursor");
-        return false;
+    if (!AppData->focused) {
+        if (!RenderCursor::Hollow(cursor, AppData, Offset)) {
+            Log_Err("Failed to render cursor");
+            return false;
+        }
+        return true;
+    }
+
+    switch (AppData->EditorData.mode) {
+    case Insert:
+        if (!RenderCursor::Beam(cursor, AppData, Offset)) {
+            Log_Err("Failed to render cursor");
+            return false;
+        }
+        break;
+    case Normal:
+        if (!RenderCursor::Box(cursor, AppData, Offset)) {
+            Log_Err("Failed to render cursor");
+            return false;
+        }
+        break;
+    case Command:
+        if (!RenderCursor::Line(cursor, AppData, Offset)) {
+            Log_Err("Failed to render cursor");
+            return false;
+        }
+        break;
+    case Visual:
+        if (!RenderCursor::Box(cursor, AppData, Offset)) {
+            Log_Err("Failed to render cursor");
+            return false;
+        }
+        break;
     }
     return true;
 }

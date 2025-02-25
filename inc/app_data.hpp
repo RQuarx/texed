@@ -11,6 +11,7 @@ struct AppData {
     SDL_Window *window;
     TTF_Font *font;
 
+    bool focused;
     bool changed;
     bool verbose;
 
@@ -20,6 +21,7 @@ struct AppData {
     renderer(NULL),
     window(NULL),
     font(NULL),
+    focused(false),
     changed(false),
     verbose(false),
     EditorData({""}, "") {};
