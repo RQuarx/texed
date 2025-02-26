@@ -92,9 +92,7 @@ public:
         struct AppData *AppData,
         size_t line_index,
         uint32_t y_offset,
-        int32_t &line_number_width,
-        bool relative = true,
-        bool zero_index = false
+        int32_t &line_number_width
     );
 
     /// Renders text

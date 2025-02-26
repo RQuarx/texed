@@ -1,21 +1,70 @@
 #include "../inc/input_handler.hpp"
 #include "../inc/movement.hpp"
 
+#define IS_LCTRL SDL_GetModState() & SDL_KMOD_LCTRL
+
 
 bool
-InputHandler::Handle(_EditorData *EditorData, SDL_Scancode scancode)
+InputHandler::Handle(AppData *AppData, SDL_Scancode scancode)
 {
+    _EditorData *editor_data = &AppData->EditorData;
+    EditorMode mode = editor_data->mode;
+
     switch (scancode) {
     case SDL_SCANCODE_BACKSPACE:
-        return Handle_Backspace(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+        return Handle_Backspace(editor_data, IS_LCTRL);
+
+    // Movement
     case SDL_SCANCODE_UP:
-        return Movement::Move_Cursor_Up(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+        return Movement::Move_Cursor_Up(editor_data, IS_LCTRL);
     case SDL_SCANCODE_DOWN:
-        return Movement::Move_Cursor_Down(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+        return Movement::Move_Cursor_Down(editor_data, IS_LCTRL);
     case SDL_SCANCODE_LEFT:
-        return Movement::Move_Cursor_Left(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+        return Movement::Move_Cursor_Left(editor_data, IS_LCTRL);
     case SDL_SCANCODE_RIGHT:
-        return Movement::Move_Cursor_Right(EditorData, SDL_GetModState() & SDL_KMOD_LCTRL);
+        return Movement::Move_Cursor_Right(editor_data, IS_LCTRL);
+
+    case SDL_SCANCODE_H:
+        if (mode == Normal)
+            return Movement::Move_Cursor_Left(editor_data, IS_LCTRL);
+        break;
+    case SDL_SCANCODE_J:
+        if (mode == Normal)
+            return Movement::Move_Cursor_Up(editor_data, IS_LCTRL);
+        break;
+    case SDL_SCANCODE_K:
+        if (mode == Normal)
+            return Movement::Move_Cursor_Down(editor_data, IS_LCTRL);
+        break;
+    case SDL_SCANCODE_L:
+        if (mode == Normal)
+            return Movement::Move_Cursor_Right(editor_data, IS_LCTRL);
+        break;
+
+    // Mode
+    case SDL_SCANCODE_INSERT:
+    case SDL_SCANCODE_I:
+        if (mode != Insert) {
+            editor_data->cursor.x--;
+            editor_data->mode = Insert;
+            SDL_StartTextInput(AppData->window);
+            return true;
+        } break;
+
+    case SDL_SCANCODE_A:
+        if (mode != Insert) {
+            editor_data->mode = Insert;
+            SDL_StartTextInput(AppData->window);
+            return true;
+        } break;
+
+    case SDL_SCANCODE_ESCAPE:
+        if (mode != Normal) {
+            editor_data->mode = Normal;
+            SDL_StopTextInput(AppData->window);
+            return true;
+        } break;
+
     default:
         break;
     }
@@ -55,7 +104,7 @@ InputHandler::Handle_Backspace(_EditorData *EditorData, bool is_ctrl_pressed)
     }
 
     // Remove a single character
-    EditorData->file_content[EditorData->cursor.y].erase(EditorData->cursor.x - 1, 1);
+    EditorData->file_content[EditorData->cursor.y].erase(EditorData->cursor.x, 1);
     EditorData->cursor.x--;
     return true;
 }
@@ -69,11 +118,11 @@ InputHandler::Handle_CTRL_Backspace(_EditorData *EditorData)
         std::isspace(
             EditorData->file_content
             [EditorData->cursor.y]
-            [EditorData->cursor.x - 1]
+            [EditorData->cursor.x]
         )
     ) {
         EditorData->file_content[EditorData->cursor.y]
-            .erase(EditorData->cursor.x - 1, 1);
+            .erase(EditorData->cursor.x, 1);
         EditorData->cursor.x--;
     }
 
@@ -82,11 +131,11 @@ InputHandler::Handle_CTRL_Backspace(_EditorData *EditorData)
         !std::isspace(
             EditorData->file_content
             [EditorData->cursor.y]
-            [EditorData->cursor.x - 1]
+            [EditorData->cursor.x]
         )
     ) {
         EditorData->file_content[EditorData->cursor.y]
-            .erase(EditorData->cursor.x - 1, 1);
+            .erase(EditorData->cursor.x, 1);
         EditorData->cursor.x--;
     }
 }

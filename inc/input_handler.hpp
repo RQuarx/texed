@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor.hpp"
+#include "app_data.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -13,7 +13,7 @@ public:
     /// Handles scancode inputs
     /// \param EditorData _EditorData struct
     /// \param scancode user input as scancode
-    static bool Handle(_EditorData *EditorData, SDL_Scancode scancode);
+    static bool Handle(AppData *AppData, SDL_Scancode scancode);
 
     InputHandler() = delete;
 private:

@@ -5,7 +5,11 @@ bool
 Movement::Move_Cursor_Right(_EditorData *EditorData, bool is_ctrl_pressed)
 {
     size_t line_len =
-        EditorData->file_content[EditorData->cursor.y].length() - 1;
+        EditorData->file_content[EditorData->cursor.y].length();
+
+    if (EditorData->mode == Normal)
+        line_len--;
+
     Cursor *cursor = &EditorData->cursor;
 
     if (is_ctrl_pressed) {
@@ -41,6 +45,7 @@ bool
 Movement::Move_Cursor_Left(_EditorData *EditorData, bool is_ctrl_pressed)
 {
     Cursor *cursor = &EditorData->cursor;
+    int32_t min = (EditorData->mode == Normal ? 1 : 0);
 
     if (cursor->x > 0) {
         if (!is_ctrl_pressed) {
@@ -50,13 +55,13 @@ Movement::Move_Cursor_Left(_EditorData *EditorData, bool is_ctrl_pressed)
         }
 
         if (
-            std::isspace(EditorData->file_content[cursor->y][cursor->x - 1])
+            std::isspace(EditorData->file_content[cursor->y][cursor->x - min])
         ) cursor->x--;
 
         while (
             cursor->x &&
             !std::isspace(
-                EditorData->file_content[cursor->y][cursor->x - 1]
+                EditorData->file_content[cursor->y][cursor->x - min]
             )
         ) cursor->x--;
         return true;
@@ -64,7 +69,7 @@ Movement::Move_Cursor_Left(_EditorData *EditorData, bool is_ctrl_pressed)
 
     if (cursor->y) {
         cursor->y--;
-        cursor->x = EditorData->file_content[cursor->y].length() - 1;
+        cursor->x = EditorData->file_content[cursor->y].length() - min;
         return true;
     }
     return false;

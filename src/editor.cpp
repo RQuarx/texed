@@ -77,9 +77,9 @@ Editor::Render_Loop(AppData *AppData, Offset offset)
         */
         if (!Render_Line_Number(AppData, i, y_offset, line_number_width)) return false;
         if (!Get_String_Width(AppData->font, "  ", &text_padding)) return false;
-
         render_offset.x = offset.x + line_number_width + text_padding;
 
+        // Renders cursor
         if (
             !cursor_rendered &&
             cursor->y <= EditorData->last_rendered_line &&
@@ -90,6 +90,7 @@ Editor::Render_Loop(AppData *AppData, Offset offset)
             cursor_rendered = true;
         }
 
+        // Renders texts
         if (
             AppData->focused &&
             AppData->EditorData.mode == Normal &&
@@ -209,15 +210,13 @@ Editor::Render_Line_Number(
     AppData *AppData,
     size_t line_index,
     uint32_t y_offset,
-    int32_t &line_number_width,
-    bool relative,
-    bool zero_index
+    int32_t &line_number_width
 )
 {
     std::string line_number = std::to_string(
-        relative ?
+        relative_line_number ?
         std::abs((int32_t)AppData->EditorData.cursor.y - (int32_t)line_index) :
-        (zero_index ? line_index - 1 : line_index)
+        (zero_indexing ? line_index - 1 : line_index)
     );
 
     line_number.insert(
@@ -265,31 +264,22 @@ Editor::Render_Cursor(AppData *AppData, Offset Offset)
         return true;
     }
 
+    bool return_code;
     switch (AppData->EditorData.mode) {
     case Insert:
-        if (!RenderCursor::Beam(cursor, AppData, Offset)) {
-            Log_Err("Failed to render cursor");
-            return false;
-        }
+        return_code = RenderCursor::Beam(cursor, AppData, Offset);
         break;
     case Normal:
-        if (!RenderCursor::Box(cursor, AppData, Offset)) {
-            Log_Err("Failed to render cursor");
-            return false;
-        }
+        return_code = RenderCursor::Box(cursor, AppData, Offset);
         break;
     case Command:
-        if (!RenderCursor::Line(cursor, AppData, Offset)) {
-            Log_Err("Failed to render cursor");
-            return false;
-        }
+        return_code = RenderCursor::Line(cursor, AppData, Offset);
         break;
     case Visual:
-        if (!RenderCursor::Box(cursor, AppData, Offset)) {
-            Log_Err("Failed to render cursor");
-            return false;
-        }
+        return_code = RenderCursor::Box(cursor, AppData, Offset);
         break;
     }
-    return true;
+
+    if (!return_code) Log_Err("Failed to render cursor");
+    return return_code;
 }

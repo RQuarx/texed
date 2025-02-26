@@ -102,13 +102,13 @@ bool
 RenderCursor::Beam(SDL_Color color, AppData *AppData, Offset Offset)
 {
     int32_t h;
-    int32_t w = cursor_width;
-    if (!Get_Font_Size(AppData->font, NULL, &h)) return false;
+    int32_t w;
+    if (!Get_Font_Size(AppData->font, &w, &h)) return false;
 
     float y = Offset.y + (AppData->EditorData.cursor.y * h);
-    float x = Offset.x + (AppData->EditorData.cursor.x * w);
+    float x = Offset.x + (AppData->EditorData.cursor.x * w) + w;
 
-    SDL_FRect cursor = Get_Cursor_Rect(AppData->renderer, color, x, y, w, h);
+    SDL_FRect cursor = Get_Cursor_Rect(AppData->renderer, color, x, y, cursor_width, h);
 
     if (!SDL_RenderRect(AppData->renderer, &cursor)) {
         Log_Err("Failed to render cursor rect");

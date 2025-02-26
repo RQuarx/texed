@@ -14,3 +14,6 @@ static const char *font_file = "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regul
 static float cursor_width = 2.0f;
 
 static float scroll_multiplier = 2.0f;
+
+static bool zero_indexing = true;
+static bool relative_line_number = true;
