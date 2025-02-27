@@ -16,8 +16,6 @@ To build this program, ensure that you have the following packages installed on 
 
 ## How to build
 
-If you haven't, install clang to your system.
-
 ```bash
 $ git clone https://github.com/RQuarx/texed/
 $ cd texed
