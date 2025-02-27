@@ -63,4 +63,4 @@
     static const bool ctrl_s_save = true;
 
     // The width of a tab '\t' in spaces
-    static uint8_t tab_width = 4;
+    static int tab_width = 4;

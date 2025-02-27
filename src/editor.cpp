@@ -82,8 +82,8 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
         // Renders cursor
         if (
             !cursor_rendered &&
-            cursor->y <= editor_data->last_rendered_line &&
-            cursor->y >= editor_data->scroll_offset
+            cursor->y <= (int64_t)editor_data->last_rendered_line &&
+            cursor->y >= (int64_t)editor_data->scroll_offset
         ) {
             int64_t cursor_y = y_offset - (editor_data->scroll_offset * line_height);
             if (!Render_Cursor(app_data, { render_offset.x, cursor_y })) return false;
@@ -94,7 +94,7 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
         if (
             app_data->focused &&
             app_data->editor_data.mode == Normal &&
-            cursor->y == i
+            cursor->y == (int64_t)i
         ) {
             if (
                 !Render_Inverted_Text(

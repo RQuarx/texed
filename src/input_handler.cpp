@@ -71,8 +71,10 @@ InputHandler::Handle(AppData *app_data, SDL_Scancode scancode)
 
     case SDL_SCANCODE_A:
         if (mode != Insert) {
-            if (editor_data->cursor.x < editor_data->file_content[editor_data->cursor.y].length())
-                editor_data->cursor.x++;
+            if (
+                editor_data->cursor.x <
+                (int64_t)editor_data->file_content[editor_data->cursor.y].length()
+            ) editor_data->cursor.x++;
             editor_data->mode = Insert;
             SDL_StartTextInput(app_data->window);
             return true;
@@ -84,7 +86,7 @@ InputHandler::Handle(AppData *app_data, SDL_Scancode scancode)
             SDL_StopTextInput(app_data->window);
             if (
                 editor_data->cursor.x >=
-                editor_data->file_content[editor_data->cursor.y].length()
+                (int64_t)editor_data->file_content[editor_data->cursor.y].length()
             ) editor_data->cursor.x--;
             return true;
         } break;
