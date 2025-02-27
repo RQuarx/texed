@@ -5,24 +5,24 @@
 
 
 bool
-Decoration::Draw_Decoration(AppData *AppData, Offset *offset)
+Decoration::Draw_Decoration(AppData *app_data, Offset *offset)
 {
-    if (!Draw_File_Name(AppData, offset))
+    if (!Draw_File_Name(app_data, offset))
         return false;
     return true;
 }
 
 
 bool
-Decoration::Draw_File_Name(AppData *AppData, Offset *offset)
+Decoration::Draw_File_Name(AppData *app_data, Offset *offset)
 {
     const int32_t padding_value = 10;
     int32_t string_size[2];
 
     if (
         !TTF_GetStringSize(
-            AppData->font,
-            AppData->EditorData.file_name.c_str(),
+            app_data->font,
+            app_data->editor_data.file_name.c_str(),
             0,
             &string_size[0],
             &string_size[1]
@@ -34,8 +34,8 @@ Decoration::Draw_File_Name(AppData *AppData, Offset *offset)
 
     if (
         !Editor::Render_Text(
-            AppData,
-            AppData->EditorData.file_name,
+            app_data,
+            app_data->editor_data.file_name,
             { padding_value, padding_value },
             foreground
         )
@@ -45,7 +45,7 @@ Decoration::Draw_File_Name(AppData *AppData, Offset *offset)
 
     if (
         !SDL_SetRenderDrawColor(
-            AppData->renderer,
+            app_data->renderer,
             border.r,
             border.g,
             border.b,
@@ -58,7 +58,7 @@ Decoration::Draw_File_Name(AppData *AppData, Offset *offset)
 
     if (
         !SDL_RenderLine(
-            AppData->renderer,
+            app_data->renderer,
             0,
             y,
             string_size[0] + (padding_value * 2),

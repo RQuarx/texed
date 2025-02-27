@@ -15,7 +15,7 @@ struct AppData {
     bool changed;
     bool verbose;
 
-    _EditorData EditorData;
+    EditorData editor_data;
 
     AppData() :
     renderer(NULL),
@@ -24,5 +24,5 @@ struct AppData {
     focused(false),
     changed(false),
     verbose(false),
-    EditorData({""}, "") {};
+    editor_data({""}, "") {};
 };

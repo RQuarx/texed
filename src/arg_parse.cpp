@@ -56,3 +56,19 @@ ArgParse::Get_File_Path()
 
     return nullopt;
 }
+
+
+std::string
+ArgParse::Get_File_Name()
+{
+    if (args.size() == 0) return "";
+
+    std::string arg_file = Arg_Option("-f", "--file");
+    if (!arg_file.empty()) return arg_file;
+
+    if (
+        args.back().front() != '-'
+    ) { return args.back(); }
+
+    return "";
+}

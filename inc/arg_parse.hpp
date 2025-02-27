@@ -39,4 +39,8 @@ public:
     /// Searches for an arg containing a file path
     /// \return returns the file path if found, else returns nullopt
     std::optional<fs::path> Get_File_Path();
+
+    /// Searched for a file name (edited file)
+    /// \return will return an empty string if none are found
+    std::string Get_File_Name();
 };

@@ -9,10 +9,10 @@ class
 RenderCursor
 {
 public:
-    static bool Hollow(SDL_Color color, AppData *AppData, Offset Offset);
-    static bool Beam(SDL_Color color, AppData *AppData, Offset Offset);
-    static bool Line(SDL_Color color, AppData *AppData, Offset Offset);
-    static bool Box(SDL_Color color, AppData *AppData, Offset Offset);
+    static bool Hollow(SDL_Color color, AppData *app_data, Offset Offset);
+    static bool Beam(SDL_Color color, AppData *app_data, Offset Offset);
+    static bool Line(SDL_Color color, AppData *app_data, Offset Offset);
+    static bool Box(SDL_Color color, AppData *app_data, Offset Offset);
 
     static bool Visual(SDL_Color color, VisualData data, SDL_Renderer *renderer, Offset Offset);
 

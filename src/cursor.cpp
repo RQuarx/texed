@@ -32,17 +32,17 @@ RenderCursor::Get_Cursor_Rect(
 
 
 bool
-RenderCursor::Hollow(SDL_Color color, AppData *AppData, Offset Offset)
+RenderCursor::Hollow(SDL_Color color, AppData *app_data, Offset Offset)
 {
     int32_t h;
     int32_t w;
-    Get_Font_Size(AppData->font, &w, &h);
+    Get_Font_Size(app_data->font, &w, &h);
 
-    float y = Offset.y + (AppData->EditorData.cursor.y * h);
-    float x = Offset.x + (AppData->EditorData.cursor.x * w);
+    float y = Offset.y + (app_data->editor_data.cursor.y * h);
+    float x = Offset.x + (app_data->editor_data.cursor.x * w);
 
-    SDL_FRect cursor = Get_Cursor_Rect(AppData->renderer, color, x, y, w, h);
-    if (!SDL_RenderRect(AppData->renderer, &cursor)) {
+    SDL_FRect cursor = Get_Cursor_Rect(app_data->renderer, color, x, y, w, h);
+    if (!SDL_RenderRect(app_data->renderer, &cursor)) {
         Log_Err("Failed to fill cursor surface");
         return false;
     }
@@ -52,16 +52,16 @@ RenderCursor::Hollow(SDL_Color color, AppData *AppData, Offset Offset)
 
 
 bool
-RenderCursor::Box(SDL_Color color, AppData *AppData, Offset Offset)
+RenderCursor::Box(SDL_Color color, AppData *app_data, Offset Offset)
 {
     int32_t h;
     int32_t w;
-    Get_Font_Size(AppData->font, &w, &h);
+    Get_Font_Size(app_data->font, &w, &h);
 
-    float y = Offset.y + (AppData->EditorData.cursor.y * h);
-    float x = Offset.x + (AppData->EditorData.cursor.x * w);
+    float y = Offset.y + (app_data->editor_data.cursor.y * h);
+    float x = Offset.x + (app_data->editor_data.cursor.x * w);
 
-    SDL_FRect cursor = Get_Cursor_Rect(AppData->renderer, color, x, y, w, h);
+    SDL_FRect cursor = Get_Cursor_Rect(app_data->renderer, color, x, y, w, h);
 
     SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_XRGB32);
     if (!surface) {
@@ -80,14 +80,14 @@ RenderCursor::Box(SDL_Color color, AppData *AppData, Offset Offset)
         return false;
     }
 
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(AppData->renderer, surface);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(app_data->renderer, surface);
     SDL_DestroySurface(surface);
     if (!texture) {
         Log_Err("Failed to create texture");
         return false;
     }
 
-    if (!SDL_RenderTexture(AppData->renderer, texture, NULL, &cursor)) {
+    if (!SDL_RenderTexture(app_data->renderer, texture, NULL, &cursor)) {
         Log_Err("Failed to render cursor");
         SDL_DestroyTexture(texture);
         return false;
@@ -99,18 +99,18 @@ RenderCursor::Box(SDL_Color color, AppData *AppData, Offset Offset)
 
 
 bool
-RenderCursor::Beam(SDL_Color color, AppData *AppData, Offset Offset)
+RenderCursor::Beam(SDL_Color color, AppData *app_data, Offset Offset)
 {
     int32_t h;
     int32_t w;
-    if (!Get_Font_Size(AppData->font, &w, &h)) return false;
+    if (!Get_Font_Size(app_data->font, &w, &h)) return false;
 
-    float y = Offset.y + (AppData->EditorData.cursor.y * h);
-    float x = Offset.x + (AppData->EditorData.cursor.x * w) + w;
+    float y = Offset.y + (app_data->editor_data.cursor.y * h);
+    float x = Offset.x + (app_data->editor_data.cursor.x * w);
 
-    SDL_FRect cursor = Get_Cursor_Rect(AppData->renderer, color, x, y, cursor_width, h);
+    SDL_FRect cursor = Get_Cursor_Rect(app_data->renderer, color, x, y, cursor_width, h);
 
-    if (!SDL_RenderRect(AppData->renderer, &cursor)) {
+    if (!SDL_RenderRect(app_data->renderer, &cursor)) {
         Log_Err("Failed to render cursor rect");
         return false;
     }
@@ -119,20 +119,20 @@ RenderCursor::Beam(SDL_Color color, AppData *AppData, Offset Offset)
 
 
 bool
-RenderCursor::Line(SDL_Color color, AppData *AppData, Offset Offset)
+RenderCursor::Line(SDL_Color color, AppData *app_data, Offset Offset)
 {
     int32_t h;
     int32_t w;
-    if (!Get_Font_Size(AppData->font, &w, &h)) return false;
+    if (!Get_Font_Size(app_data->font, &w, &h)) return false;
 
-    float y = Offset.y + (AppData->EditorData.cursor.y * h) + h;
-    float x = Offset.x + (AppData->EditorData.cursor.x * w);
+    float y = Offset.y + (app_data->editor_data.cursor.y * h) + h;
+    float x = Offset.x + (app_data->editor_data.cursor.x * w);
 
     h = 1;
 
-    SDL_FRect cursor = Get_Cursor_Rect(AppData->renderer, color, x, y, w, h);
+    SDL_FRect cursor = Get_Cursor_Rect(app_data->renderer, color, x, y, w, h);
 
-    if (!SDL_RenderRect(AppData->renderer, &cursor)) {
+    if (!SDL_RenderRect(app_data->renderer, &cursor)) {
         Log_Err("Failed to render cursor rect");
         return false;
     }

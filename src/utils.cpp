@@ -170,10 +170,14 @@ Invert_Color(SDL_Color color)
 bool
 Is_Space(std::string str)
 {
-    return std::all_of(
-        str.begin(),
-        str.end(),
-        [](uint8_t c){ return std::isspace(c); }
+    return (
+        str.empty() ?
+        true :
+        std::all_of(
+            str.begin(),
+            str.end(),
+            [](uint8_t c){ return std::isspace(c); }
+        )
     );
 }
 
@@ -195,3 +199,8 @@ Get_String_Width(TTF_Font *font, std::string text, int32_t *w)
     }
     return true;
 }
+
+
+bool
+Is_Word_Bound(char c)
+{ return (std::isspace(c) || std::ispunct(c)); }

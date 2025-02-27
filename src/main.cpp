@@ -1,9 +1,11 @@
+#include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL.h>
 
 #include "../inc/input_handler.hpp"
+#include "../inc/file_handler.hpp"
 #include "../inc/decoration.hpp"
 #include "../inc/arg_parse.hpp"
 #include "../inc/app_data.hpp"
@@ -13,7 +15,6 @@
 #include "../config.hpp"
 
 #include <algorithm>
-#include <fstream>
 
 static const float ONE_SECOND_MS = 1000.0f;
 static const char *APP_NAME = "texed";
@@ -40,9 +41,12 @@ App_Event(struct AppData *app_data, SDL_Event *event)
         return SDL_APP_SUCCESS;
 
     case SDL_EVENT_TEXT_INPUT:
-        app_data->EditorData.file_content[app_data->EditorData.cursor.y]
-            .insert(app_data->EditorData.cursor.x + 1, event->text.text);
-        app_data->EditorData.cursor.x += SDL_strlen(event->text.text);
+        {
+            auto editor_data = &app_data->editor_data;
+            editor_data->file_content[editor_data->cursor.y]
+                .insert(editor_data->cursor.x, event->text.text);
+            editor_data->cursor.x += SDL_strlen(event->text.text);
+        }
         app_data->changed = true;
         break;
 
@@ -68,11 +72,11 @@ App_Event(struct AppData *app_data, SDL_Event *event)
         break;
 
     case SDL_EVENT_MOUSE_WHEEL:
-        app_data->EditorData.scroll_offset = std::clamp(
-            (int64_t)app_data->EditorData.scroll_offset -
+        app_data->editor_data.scroll_offset = std::clamp(
+            (int64_t)app_data->editor_data.scroll_offset -
             (int64_t)(event->wheel.y * scroll_multiplier),
             (int64_t)0,
-            (int64_t)app_data->EditorData.file_content.size() - 1
+            (int64_t)app_data->editor_data.file_content.size() - 1
         );
         app_data->changed = true;
         break;
@@ -145,7 +149,7 @@ Init_SDL(struct AppData *app_data)
     }
 
     if (app_data->verbose) Log_Debug("Loading fonts");
-    app_data->font = TTF_OpenFont(font_file, 24);
+    app_data->font = TTF_OpenFont(font_file, font_size);
 
     if (!app_data->font) {
         Log_Err("Failed to load font");
@@ -181,68 +185,81 @@ Init_SDL(struct AppData *app_data)
 int32_t
 main(int32_t argc, char **argv)
 {
-    int32_t return_code = EXIT_SUCCESS;
     ArgParse arg_parse(argc, argv);
     struct AppData app_data;
 
+    /* Parsing CLI arguments */
     if (arg_parse.Arg("-h","--help")) {
         std::printf(HELP_MSG);
-        return SDL_APP_SUCCESS;
+        return EXIT_SUCCESS;
     }
 
     if (arg_parse.Arg("-v", "--version")) {
         std::printf("%s-%s", APP_NAME, APP_VERSION);
-        return SDL_APP_SUCCESS;
+        return EXIT_SUCCESS;
     }
 
     app_data.verbose = arg_parse.Arg("-V", "--verbose");
 
+    /* Initialising SDL */
     if (!Init_SDL(&app_data)) {
+        Log_Err("Failed to init SDL");
         App_Quit(&app_data);
         return EXIT_FAILURE;
     };
 
-    if (app_data.verbose) Log_Debug("Fetching file path");
-    auto file = arg_parse.Get_File_Path();
+    if (app_data.verbose) Log_Debug("Creating editor & fetching file path");
+    auto editor =
+        Editor::Init_Editor(FileHandler::Fetch_File_Path(&arg_parse));
 
-    if (!file) {
-        file = "new_file.txt";
-        std::ofstream text_file("new_file.txt");
-        text_file << " ";
-        text_file.close();
+    if (!editor) {
+        Log_Err("Failed to create editor, path is not a file");
+        App_Quit(&app_data);
+        return EXIT_FAILURE;
     }
+    app_data.editor_data = *editor;
 
-    if (app_data.verbose) Log_Debug("Creating editor");
-    app_data.EditorData = *Editor::Init_Editor(*file);
-    app_data.changed = true;
-
+    if (app_data.verbose) Log_Debug("Fetching display mode");
     SDL_DisplayID *displays = SDL_GetDisplays(NULL);
     if (!displays) {
         Log_Err("Failed to get displays");
-        return SDL_APP_FAILURE;
+        App_Quit(&app_data);
+        return EXIT_FAILURE;
     }
-    const SDL_DisplayMode *display_mode =
-        SDL_GetCurrentDisplayMode(*displays);
+
+    const SDL_DisplayMode *display_mode = SDL_GetCurrentDisplayMode(*displays);
+    if (!display_mode) {
+        Log_Err("Failed to get display mode");
+        App_Quit(&app_data);
+        return EXIT_FAILURE;
+    }
+
+    app_data.changed = true;
 
     Log_Info("Initialisation complete");
 
     Offset offset = { 0, 0 };
     SDL_AppResult result;
     SDL_Event event;
+    int32_t end; // Return code
     while (true) {
         SDL_Delay(ONE_SECOND_MS / display_mode->refresh_rate);
 
-        while (SDL_PollEvent(&event))
-            result = App_Event(&app_data, &event);
-        if (result == SDL_APP_SUCCESS) break;
-        if (result == SDL_APP_FAILURE) return EXIT_FAILURE;
+        while (SDL_PollEvent(&event)) result = App_Event(&app_data, &event);
+
+        if (result != SDL_APP_CONTINUE) {
+            end = (result == SDL_APP_SUCCESS ? EXIT_SUCCESS : EXIT_FAILURE);
+            break;
+        }
 
         result = App_Iterate(&app_data, offset);
 
-        if (result == SDL_APP_SUCCESS) break;
-        if (result == SDL_APP_FAILURE) return EXIT_FAILURE;
+        if (result != SDL_APP_CONTINUE) {
+            end = (result == SDL_APP_SUCCESS ? EXIT_SUCCESS : EXIT_FAILURE);
+            break;
+        }
     }
 
     App_Quit(&app_data);
-    return EXIT_SUCCESS;
+    return end;
 }

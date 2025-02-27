@@ -75,5 +75,8 @@ bool Is_Space(std::string str);
 /// \param font the font to query
 /// \param text text to calculate
 /// \param w will be filled with the width in pixel
-/// \return true on success and false on failure
 bool Get_String_Width(TTF_Font *font, std::string text, int32_t *w);
+
+/// Checks if the input char is a word bound
+/// \param c input char
+bool Is_Word_Bound(char c);
