@@ -25,7 +25,7 @@ enum Direction {
 
 
 /// Trims a string
-/// \param trim_direction 1 for left, 2 for right, 0 for all
+/// \param trim_direction options = All, Left, Right
 /// \return returns true of success, else returns false
 bool Trim_String(std::string &str, Direction trim_direction = All);
 SDL_Color Hex_To_Color(std::string &hex);
