@@ -7,8 +7,7 @@ Movement::Move_Cursor_Right(EditorData *editor_data, bool is_ctrl_pressed)
 {
     int64_t line_len =
         editor_data->file_content[editor_data->cursor.y].length();
-    if (editor_data->mode == Normal)
-        line_len--;
+    if (editor_data->mode == Normal && line_len > 0) line_len--;
 
     Cursor *cursor = &editor_data->cursor;
 
@@ -106,7 +105,7 @@ Movement::Move_Cursor_Up(EditorData *editor_data, bool is_ctrl_pressed)
 
     int64_t line_len =
         editor_data->file_content[cursor->y].length();
-    if (editor_data->mode == Normal)
+    if (editor_data->mode == Normal && line_len > 0)
         line_len--;
 
     cursor->x = cursor->max_x;
@@ -136,8 +135,7 @@ Movement::Move_Cursor_Down(EditorData *editor_data, bool is_ctrl_pressed)
 
     int64_t line_len =
         editor_data->file_content[cursor->y].length();
-    if (editor_data->mode == Normal)
-        line_len--;
+    if (editor_data->mode == Normal && line_len > 0) line_len--;
 
     cursor->x = cursor->max_x;
     cursor->x = std::min(cursor->x, line_len);

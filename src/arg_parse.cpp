@@ -29,11 +29,11 @@ ArgParse::Arg_Option(std::string_view arg, std::string_view long_arg)
 {
     auto it = std::ranges::find(this->args, arg);
 
-    if (it != this->args.end() && it + 1 != this->args.end()) return *it;
+    if (it != this->args.end() && ++it != this->args.end()) return *it;
 
     if (!long_arg.empty()) {
         it = std::ranges::find(this->args, long_arg);
-        if (it != this->args.end() && it + 1 != this->args.end()) return *it;
+        if (it != this->args.end() && ++it != this->args.end()) return *it;
     }
 
     return "";

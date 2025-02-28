@@ -16,7 +16,7 @@
 
 static const float ONE_SECOND_MS = 1000.0F;
 static const char *APP_NAME = "texed";
-static const char *APP_VERSION = "0.1.0";
+static const char *APP_VERSION = "0.2.0";
 static const char *APP_IDENTITY = "Simple Text Editor";
 
 
