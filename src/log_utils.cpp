@@ -1,10 +1,10 @@
-// #include "../inc/log_utils.hpp"
 #pragma once
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>
-#include <print>
 #include <SDL3/SDL.h>
+
+#include <print>
 
 #define DEBUG_LABEL "\e[1;37m[\e[1;36mDEBUG\e[1;37m]:\e[0;0;0m"
 #define INFO_LABEL "\e[1;37m[\e[1;32mINFO\e[1;37m]:\e[0;0;0m"
@@ -48,7 +48,7 @@ Log_Debug(fmt::format_string<T...> fmt, T&&... args)
     fmt::println(
         "{:%H:%M:%S} {} {}",
         fmt::localtime(time),
-        ERR_LABEL,
+        DEBUG_LABEL,
         fmt::format(fmt, args...)
     );
 }

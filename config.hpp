@@ -22,6 +22,7 @@
 /* Fonts */
 
     // Absolute file path of the font file
+    // (stuff would probably break if you didnt use a monospace font)
     static const char *font_file = "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf";
 
     // Font size
