@@ -1,7 +1,6 @@
-// #include "../inc/log_utils.hpp"
-#include "log_utils.cpp"
 #include "../inc/cursor.hpp"
 #include "../inc/utils.hpp"
+#include "log_utils.cpp"
 
 #include "../config.hpp"
 

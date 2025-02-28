@@ -1,8 +1,7 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 
-// #include "../inc/log_utils.hpp"
-#include "log_utils.cpp"
 #include "../inc/utils.hpp"
+#include "log_utils.cpp"
 
 #include <algorithm>
 #include <cstdarg>

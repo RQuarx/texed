@@ -5,7 +5,6 @@
 #include "../inc/file_handler.hpp"
 #include "../inc/decoration.hpp"
 #include "../inc/arg_parse.hpp"
-// #include "../inc/log_utils.hpp"
 #include "../inc/app_data.hpp"
 #include "../inc/editor.hpp"
 #include "log_utils.cpp"

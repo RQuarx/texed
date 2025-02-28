@@ -13,7 +13,8 @@ Diagnostics:
       'readability-identifier-length',
       'readability-braces-around-statements',
       'bugprone-narrowing-conversions',
-      'bugprone-easily-swappable-parameters'
+      'bugprone-easily-swappable-parameters',
+      'bugprone-suspicious-include'
     ]
     CheckOptions:
       readability-identifier-naming.VariableCase: pascal_case

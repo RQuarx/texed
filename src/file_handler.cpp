@@ -1,9 +1,7 @@
 #include "../inc/file_handler.hpp"
-// #include "../inc/log_utils.hpp"
-#include "log_utils.cpp"
 #include "../inc/app_data.hpp"
-#include "../inc/utils.hpp"
 #include "../config.hpp"
+#include "log_utils.cpp"
 
 #include <fstream>
 

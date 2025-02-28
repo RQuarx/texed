@@ -1,30 +1,30 @@
+#include <SDL3_ttf/SDL_ttf.h>
+
 #include "../inc/decoration.hpp"
-// #include "../inc/log_utils.hpp"
 #include "log_utils.cpp"
-#include "../inc/utils.hpp"
 
 #include "../config.hpp"
+
+#include <array>
 
 
 bool
 Decoration::Draw_Decoration(AppData *app_data, Offset *offset)
-{
-    return Draw_File_Name(app_data, offset);
-}
+{ return Draw_File_Name(app_data, offset); }
 
 
 bool
 Decoration::Draw_File_Name(AppData *app_data, Offset *offset)
 {
     const int32_t padding_value = 10;
-    int32_t string_size[2];
+    std::array<int32_t, 2> string_size;
 
     if (
         !TTF_GetStringSize(
             app_data->font,
             app_data->editor_data.file_name.c_str(),
             0,
-            &string_size[0],
+            string_size.data(),
             &string_size[1]
         )
     ) {
