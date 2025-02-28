@@ -1,2 +1,26 @@
 InlayHints:
   ParameterNames: No
+
+CompileFlags:
+  Add: [--std=c++23, -Iinc]
+  Compiler: clang++
+
+Diagnostics:
+  ClangTidy:
+    Add: ['bugprone-*', 'modernize-*', 'readability-*', 'performance-*']
+    Remove: [
+      'modernize-use-trailing-return-type',
+      'readability-identifier-length',
+      'readability-braces-around-statements',
+      'bugprone-narrowing-conversions',
+      'bugprone-easily-swappable-parameters'
+    ]
+    CheckOptions:
+      readability-identifier-naming.VariableCase: pascal_case
+    FastCheckFilter: Strict
+
+Completion:
+  AllScopes: Yes
+
+Hover:
+  ShowAKA: Yes

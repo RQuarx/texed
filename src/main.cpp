@@ -1,40 +1,39 @@
-#include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_hints.h>
 #include <SDL3/SDL.h>
 
 #include "../inc/input_handler.hpp"
 #include "../inc/file_handler.hpp"
 #include "../inc/decoration.hpp"
 #include "../inc/arg_parse.hpp"
+// #include "../inc/log_utils.hpp"
 #include "../inc/app_data.hpp"
 #include "../inc/editor.hpp"
-#include "../inc/utils.hpp"
+#include "log_utils.cpp"
 
 #include "../config.hpp"
 
 #include <algorithm>
+#include <print>
 
-static const float ONE_SECOND_MS = 1000.0f;
+static const float ONE_SECOND_MS = 1000.0F;
 static const char *APP_NAME = "texed";
 static const char *APP_VERSION = "0.1.0";
 static const char *APP_IDENTITY = "Simple Text Editor";
 
 
 void
-App_Quit(struct AppData *app_data)
+App_Quit(AppData *app_data)
 {
-    if (app_data->font) TTF_CloseFont(app_data->font);
+    if (app_data->font != nullptr) TTF_CloseFont(app_data->font);
     TTF_Quit();
-    if (app_data->window) SDL_DestroyWindow(app_data->window);
-    if (app_data->renderer) SDL_DestroyRenderer(app_data->renderer);
+    if (app_data->window != nullptr) SDL_DestroyWindow(app_data->window);
+    if (app_data->renderer != nullptr) SDL_DestroyRenderer(app_data->renderer);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 };
 
 
 SDL_AppResult
-App_Event(struct AppData *app_data, SDL_Event *event)
+App_Event(AppData *app_data, SDL_Event *event)
 {
     switch (event->type) {
     case SDL_EVENT_QUIT:
@@ -42,7 +41,7 @@ App_Event(struct AppData *app_data, SDL_Event *event)
 
     case SDL_EVENT_TEXT_INPUT:
         {
-            auto editor_data = &app_data->editor_data;
+            auto *editor_data = &app_data->editor_data;
             editor_data->file_content[editor_data->cursor.y]
                 .insert(editor_data->cursor.x, event->text.text);
             editor_data->cursor.x += SDL_strlen(event->text.text);
@@ -88,10 +87,10 @@ App_Event(struct AppData *app_data, SDL_Event *event)
 }
 
 
-SDL_AppResult
-App_Iterate(struct AppData *app_data, Offset base_offset)
+bool
+App_Iterate(AppData *app_data, Offset base_offset)
 {
-    if (!app_data->changed) return SDL_APP_CONTINUE;
+    if (!app_data->changed) return true;
 
     if (
         !SDL_SetRenderDrawColor(
@@ -103,32 +102,32 @@ App_Iterate(struct AppData *app_data, Offset base_offset)
         )
     ) {
         Log_Err("Failed to set render color");
-        return SDL_APP_FAILURE;
+        return false;
     }
 
     if (!SDL_RenderClear(app_data->renderer)) {
         Log_Err("Failed to clear renderer");
-        return SDL_APP_FAILURE;
+        return false;
     }
 
     if (!Decoration::Draw_Decoration(app_data, &base_offset))
-        return SDL_APP_FAILURE;
+        return false;
 
     if (!Editor::Render_Loop(app_data, base_offset))
-        return SDL_APP_FAILURE;
+        return false;
 
     if (!SDL_RenderPresent(app_data->renderer)) {
         Log_Err("Failed to update renderer");
-        return SDL_APP_FAILURE;
+        return false;
     }
 
     app_data->changed = false;
-    return SDL_APP_CONTINUE;
+    return true;
 }
 
 
 bool
-Init_SDL(struct AppData *app_data)
+Init_SDL(AppData *app_data)
 {
     if (app_data->verbose) Log_Debug("Initialising video subsystem");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
@@ -151,7 +150,7 @@ Init_SDL(struct AppData *app_data)
     if (app_data->verbose) Log_Debug("Loading fonts");
     app_data->font = TTF_OpenFont(font_file, font_size);
 
-    if (!app_data->font) {
+    if (app_data->font == nullptr) {
         Log_Err("Failed to load font");
         return false;
     }
@@ -160,19 +159,19 @@ Init_SDL(struct AppData *app_data)
 
     SDL_CreateWindowAndRenderer(
         APP_NAME,
-        800,
-        600,
+        initial_window_width,
+        initial_window_height,
         SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE,
         &app_data->window,
         &app_data->renderer
     );
 
-    if (!app_data->window) {
+    if (app_data->window == nullptr) {
         Log_Err("Failed to create window");
         return false;
     }
 
-    if (!app_data->renderer) {
+    if (app_data->renderer == nullptr) {
         Log_Err("Failed to create renderer");
         return false;
     }
@@ -186,20 +185,32 @@ int32_t
 main(int32_t argc, char **argv)
 {
     ArgParse arg_parse(argc, argv);
-    struct AppData app_data;
+    // AppData app_data;
 
     /* Parsing CLI arguments */
     if (arg_parse.Arg("-h","--help")) {
-        std::printf(HELP_MSG);
+        ArgParse::Print_Help_Msg();
         return EXIT_SUCCESS;
     }
 
     if (arg_parse.Arg("-v", "--version")) {
-        std::printf("%s-%s", APP_NAME, APP_VERSION);
+        std::println("%s-%s", APP_NAME, APP_VERSION);
         return EXIT_SUCCESS;
     }
 
-    app_data.verbose = arg_parse.Arg("-V", "--verbose");
+    bool verbose = arg_parse.Arg("-V", "--verbose");
+
+    if (verbose) Log_Debug("Creating editor & fetching file path");
+    fs::path file_path = FileHandler::Fetch_File_Path(&arg_parse);
+    std::optional<EditorData> editor = Editor::Init_Editor(file_path);
+
+    if (editor == nullopt) {
+        Log_Err("Failed to create editor: {}", "path is invalid");
+        return EXIT_FAILURE;
+    }
+
+    AppData app_data(&*editor);
+    app_data.verbose = verbose;
 
     /* Initialising SDL */
     if (!Init_SDL(&app_data)) {
@@ -208,27 +219,16 @@ main(int32_t argc, char **argv)
         return EXIT_FAILURE;
     };
 
-    if (app_data.verbose) Log_Debug("Creating editor & fetching file path");
-    auto editor =
-        Editor::Init_Editor(FileHandler::Fetch_File_Path(&arg_parse));
-
-    if (!editor) {
-        Log_Err("Failed to create editor, path is not a file");
-        App_Quit(&app_data);
-        return EXIT_FAILURE;
-    }
-    app_data.editor_data = *editor;
-
     if (app_data.verbose) Log_Debug("Fetching display mode");
-    SDL_DisplayID *displays = SDL_GetDisplays(NULL);
-    if (!displays) {
+    SDL_DisplayID *displays = SDL_GetDisplays(nullptr);
+    if (displays == nullptr) {
         Log_Err("Failed to get displays");
         App_Quit(&app_data);
         return EXIT_FAILURE;
     }
 
     const SDL_DisplayMode *display_mode = SDL_GetCurrentDisplayMode(*displays);
-    if (!display_mode) {
+    if (display_mode == nullptr) {
         Log_Err("Failed to get display mode");
         App_Quit(&app_data);
         return EXIT_FAILURE;
@@ -238,7 +238,7 @@ main(int32_t argc, char **argv)
 
     Log_Info("Initialisation complete");
 
-    Offset offset = { 0, 0 };
+    Offset offset(0, 0);
     SDL_AppResult result;
     SDL_Event event;
     int32_t end; // Return code
@@ -252,10 +252,8 @@ main(int32_t argc, char **argv)
             break;
         }
 
-        result = App_Iterate(&app_data, offset);
-
-        if (result != SDL_APP_CONTINUE) {
-            end = (result == SDL_APP_SUCCESS ? EXIT_SUCCESS : EXIT_FAILURE);
+        if (!App_Iterate(&app_data, offset)) {
+            end = EXIT_FAILURE;
             break;
         }
     }

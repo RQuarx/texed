@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -17,15 +18,15 @@ struct VisualData {
 };
 
 struct Cursor {
-    int64_t x;
-    int64_t y;
-    int64_t max_x;
+    int64_t x = 0;
+    int64_t y = 0;
+    int64_t max_x = 0;
     VisualData visual_data;
 
-    Cursor() : x(0), y(0), max_x(0), visual_data() {};
+    Cursor() : visual_data() {};
 };
 
-enum EditorMode {
+enum EditorMode : uint8_t {
     Insert,
     Normal,
     Visual,
@@ -36,31 +37,35 @@ struct EditorData {
     std::vector<std::string> file_content;
     std::string file_name;
 
-    size_t last_rendered_line;
-    size_t scroll_offset;
+    size_t last_rendered_line = 0;
+    size_t scroll_offset = 0;
 
     Cursor cursor;
 
-    EditorMode mode;
+    EditorMode mode = Normal;
 
-    EditorData(std::vector<std::string> file_content, std::string file_name) :
-    file_content(file_content),
-    file_name(file_name),
-    last_rendered_line(0),
-    scroll_offset(0),
-    cursor(),
-    mode(Normal) {};
+    EditorData(std::vector<std::string> &file_content, std::string file_name) :
+        file_content(std::move(file_content)),
+        file_name(std::move(file_name)) {};
+
+    EditorData(EditorData *editor_data) :
+        file_content(editor_data->file_content),
+        file_name(editor_data->file_name) {};
 };
 
 
 struct Offset {
     int64_t x;
     int64_t y;
+
+    Offset(int64_t _x, int64_t _y) : x(_x), y(_y) {};
 };
 
 struct Range {
     int64_t start;
     int64_t end;
+
+    Range(int64_t _start, int64_t _end) : start(_start), end(_end) {};
 };
 
 class
@@ -70,7 +75,7 @@ public:
     /// Initialise Editor
     /// \param path text file path
     /// \return on success, will return EditorData. And will return nullopt on failure
-    static std::optional<EditorData> Init_Editor(fs::path path);
+    static std::optional<EditorData> Init_Editor(fs::path &path);
 
     /// Loops containing all of the editor's rendering
     /// \param app_data AppData struct
@@ -99,7 +104,7 @@ public:
     /// \return will return true on success, and false on failure
     static bool Render_Text(
         struct AppData *app_data,
-        std::string text,
+        std::string &text,
         struct Offset offset,
         SDL_Color color
     );
@@ -109,11 +114,10 @@ public:
     /// \param line the line of string to be rendered
     /// \param Offset acts more like the coordinate of where the text will be rendered at
     /// \param color the color of the text, will be inverted for the inverted text
-    /// \param start the start index of the text that will be inverted
-    /// \param end the end index of the text that will be inverted
+    /// \param range the start and end range of the inverted text
     static bool Render_Inverted_Text(
         struct AppData *app_data,
-        std::string line,
+        std::string &line,
         struct Offset offset,
         SDL_Color color,
         struct Range range

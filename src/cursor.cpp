@@ -1,3 +1,5 @@
+// #include "../inc/log_utils.hpp"
+#include "log_utils.cpp"
 #include "../inc/cursor.hpp"
 #include "../inc/utils.hpp"
 
@@ -25,8 +27,8 @@ RenderCursor::Get_Cursor_Rect(
     return {
         x,
         y,
-        (float)w,
-        (float)h,
+        w,
+        h,
     };
 }
 
@@ -64,7 +66,7 @@ RenderCursor::Box(SDL_Color color, AppData *app_data, Offset Offset)
     SDL_FRect cursor = Get_Cursor_Rect(app_data->renderer, color, x, y, w, h);
 
     SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_XRGB32);
-    if (!surface) {
+    if (surface == nullptr) {
         Log_Err("Failed to create cursor surface");
         return false;
     }
@@ -72,7 +74,7 @@ RenderCursor::Box(SDL_Color color, AppData *app_data, Offset Offset)
     if (
         !SDL_FillSurfaceRect(
             surface,
-            NULL,
+            nullptr,
             SDL_MapSurfaceRGBA(surface, color.r, color.g, color.b, color.a)
         )
     ) {
@@ -82,7 +84,7 @@ RenderCursor::Box(SDL_Color color, AppData *app_data, Offset Offset)
 
     SDL_Texture *texture = SDL_CreateTextureFromSurface(app_data->renderer, surface);
     SDL_DestroySurface(surface);
-    if (!texture) {
+    if (texture == nullptr) {
         Log_Err("Failed to create texture");
         return false;
     }

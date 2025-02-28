@@ -3,38 +3,37 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <print>
 
 
 ArgParse::ArgParse(int argc, char **argv) {
     for (int i = 1; i < argc; i++)
-        args.push_back(argv[i]);
+        args.emplace_back(argv[i]);
 }
 
 
 bool
-ArgParse::Arg(std::string arg, std::string long_arg)
+ArgParse::Arg(std::string_view arg, std::string_view long_arg)
 {
     return (
         long_arg.empty() ?
-        std::find(args.begin(), args.end(), arg) != args.end() :
-        std::find(args.begin(), args.end(), arg) != args.end() ||
-        std::find(args.begin(), args.end(), long_arg) != args.end()
+        std::ranges::find(args, arg) != args.end():
+        std::ranges::find(args, arg) != args.end() ||
+        std::ranges::find(args, long_arg) != args.end()
     );
 }
 
 
 std::string
-ArgParse::Arg_Option(std::string arg, std::string long_arg)
+ArgParse::Arg_Option(std::string_view arg, std::string_view long_arg)
 {
-    auto it = std::find(this->args.begin(), this->args.end(), arg);
+    auto it = std::ranges::find(this->args, arg);
 
-    if (it != this->args.end() && ++it != this->args.end())
-        return *it;
+    if (it != this->args.end() && it + 1 != this->args.end()) return *it;
 
     if (!long_arg.empty()) {
         it = std::find(this->args.begin(), this->args.end(), long_arg);
-        if (it != this->args.end() && ++it != this->args.end())
-            return *it;
+        if (it != this->args.end() && it + 1 != this->args.end()) return *it;
     }
 
     return "";
@@ -50,8 +49,8 @@ ArgParse::Get_File_Path()
     if (!arg_file.empty()) return fs::path(arg_file);
 
     if (
-        fs::is_regular_file(args.back()) &&
-        fs::exists(args.back())
+        fs::exists(args.back()) &&
+        fs::is_regular_file(args.back())
     ) { return fs::path(args.back()); }
 
     return nullopt;
@@ -71,4 +70,16 @@ ArgParse::Get_File_Name()
     ) { return args.back(); }
 
     return "";
+}
+
+
+void
+ArgParse::Print_Help_Msg()
+{
+    std::println("Usage: texed [options] [file]\n");
+    std::println("Options:");
+    std::println(" -h,--help                      show this message");
+    std::println(" -v,--version                   show program version");
+    std::println(" -V,--Verbose                   show logs");
+    std::println(" -f,--file                      specify the path");
 }

@@ -1,28 +1,20 @@
 #pragma once
 
-#include <SDL3_ttf/SDL_ttf.h>
-#include <SDL3/SDL.h>
-
 #include "editor.hpp"
 
 
 struct AppData {
-    SDL_Renderer *renderer;
-    SDL_Window *window;
-    TTF_Font *font;
+    struct SDL_Renderer *renderer = nullptr;
+    struct SDL_Window *window = nullptr;
+    struct TTF_Font *font = nullptr;
 
-    bool focused;
-    bool changed;
-    bool verbose;
+    bool focused = false;
+    bool changed = false;
+    bool verbose = false;
 
     EditorData editor_data;
 
-    AppData() :
-    renderer(NULL),
-    window(NULL),
-    font(NULL),
-    focused(false),
-    changed(false),
-    verbose(false),
-    editor_data({""}, "") {};
+    AppData(EditorData *_editor_data) :
+        editor_data(_editor_data)
+        {};
 };

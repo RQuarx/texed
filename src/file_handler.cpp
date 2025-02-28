@@ -1,4 +1,6 @@
 #include "../inc/file_handler.hpp"
+// #include "../inc/log_utils.hpp"
+#include "log_utils.cpp"
 #include "../inc/app_data.hpp"
 #include "../inc/utils.hpp"
 #include "../config.hpp"
@@ -46,7 +48,6 @@ FileHandler::Save_File(AppData *app_data)
         return false;
     }
 
-    std::string temp_str;
     for (size_t i = 0; i < editor_data->file_content.size(); i++) {
         std::string inserted_string = editor_data->file_content[i];
         if (i != editor_data->file_content.size() - 1) inserted_string += "\n";

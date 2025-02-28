@@ -2,9 +2,6 @@
 
 #include "app_data.hpp"
 
-#include <SDL3/SDL.h>
-
-
 
 class
 InputHandler
@@ -28,4 +25,14 @@ private:
     /// Handles the LCtrl binding of backspace
     /// \param editor_data EditorData struct
     static void Handle_CTRL_Backspace(EditorData *editor_data);
+
+    /// Handles the return key / entery key
+    /// \param editor_data EditorData struct
+    /// \return will return true on "expect to be rendered"
+    static bool Handle_Return(EditorData *editor_data);
+
+    /// Handles switching editor mode
+    /// \param app_data AppData struct
+    /// \param scancode SDL_Scancode type
+    static bool Handle_Mode_Switching(AppData *app_data, SDL_Scancode scancode);
 };

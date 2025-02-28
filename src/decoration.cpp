@@ -1,4 +1,6 @@
 #include "../inc/decoration.hpp"
+// #include "../inc/log_utils.hpp"
+#include "log_utils.cpp"
 #include "../inc/utils.hpp"
 
 #include "../config.hpp"
@@ -7,9 +9,7 @@
 bool
 Decoration::Draw_Decoration(AppData *app_data, Offset *offset)
 {
-    if (!Draw_File_Name(app_data, offset))
-        return false;
-    return true;
+    return Draw_File_Name(app_data, offset);
 }
 
 

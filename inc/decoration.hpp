@@ -2,8 +2,6 @@
 
 #include "app_data.hpp"
 
-#include <SDL3/SDL.h>
-
 
 class
 Decoration

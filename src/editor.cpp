@@ -1,3 +1,5 @@
+// #include "../inc/log_utils.hpp"
+#include "log_utils.cpp"
 #include "../inc/app_data.hpp"
 #include "../inc/cursor.hpp"
 #include "../inc/editor.hpp"
@@ -12,7 +14,7 @@
 
 
 std::optional<EditorData>
-Editor::Init_Editor(fs::path path)
+Editor::Init_Editor(fs::path &path)
 {
     if (!fs::is_regular_file(path))
         return nullopt;
@@ -49,12 +51,12 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
     if (
         !SDL_GetWindowSizeInPixels(
             app_data->window,
-            NULL,
+            nullptr,
             &window_height
         )
     ) {
         Log_Err("Failed to get window size");
-        return SDL_APP_FAILURE;
+        return false;
     }
 
     editor_data->last_rendered_line = std::min(
@@ -67,7 +69,7 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
 
     for (size_t i = editor_data->scroll_offset; i < editor_data->last_rendered_line; i++) {
         std::string line = editor_data->file_content[i];
-        Offset render_offset = { 0, y_offset };
+        Offset render_offset(0, y_offset);
         int32_t line_number_width;
         int32_t text_padding;
 
@@ -102,7 +104,7 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
                     line,
                     render_offset,
                     foreground,
-                    { cursor->x, cursor->x }
+                    Range(cursor->x, cursor->x)
                 )
             ) return false;
         } else if (!Render_Text(app_data, line, render_offset, foreground))
@@ -118,7 +120,7 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
 bool
 Editor::Render_Text(
     AppData *app_data,
-    std::string text,
+    std::string &text,
     Offset offset,
     SDL_Color color
 )
@@ -131,14 +133,14 @@ Editor::Render_Text(
         color
     );
 
-    if (!surface) {
+    if (surface == nullptr) {
         Log_Err("Failed to create surface");
         return false;
     }
 
     SDL_Texture *texture = SDL_CreateTextureFromSurface(app_data->renderer, surface);
 
-    if (!texture) {
+    if (texture == nullptr) {
         Log_Err("Failed to create texture from surface");
         return false;
     }
@@ -150,7 +152,7 @@ Editor::Render_Text(
         (float)surface->h
     };
 
-    bool return_val = SDL_RenderTexture(app_data->renderer, texture, NULL, &rect);
+    bool return_val = SDL_RenderTexture(app_data->renderer, texture, nullptr, &rect);
     SDL_DestroySurface(surface);
     SDL_DestroyTexture(texture);
 
@@ -161,7 +163,7 @@ Editor::Render_Text(
 bool
 Editor::Render_Inverted_Text(
     struct AppData *app_data,
-    std::string line,
+    std::string &line,
     struct Offset Offset,
     SDL_Color color,
     struct Range range
@@ -173,22 +175,24 @@ Editor::Render_Inverted_Text(
         range.end >= (int64_t)line.size() ||
         range.start > range.end
     ) {
-        Log_Err("Invalid start or end value: %lu %lu", range.start, range.end);
+        Log_Err("Invalid start or end value: {} {}", range.start, range.end);
         return false;
     }
 
     std::array<std::string, 3> text = {
-        (range.start ? line.substr(0, range.start) : ""),
+        (range.start > 0 ? line.substr(0, range.start) : ""),
         line.substr(range.start, (range.end + 1) - range.start),
         (range.end >= (int64_t)line.length() ? "" : line.substr(range.end + 1))
     };
 
     std::array<int32_t, 3> str_offset = {0};
 
-    for (uint8_t i = 0; i < text.size(); i++) {
-        if (i != 2 && !Get_String_Width(app_data->font, text[i], &str_offset[i + 1]))
-            return false;
-        str_offset[i] += (i ? str_offset[i - 1] : Offset.x);
+    for (size_t i = 0; i < text.size(); i++) {
+        if (
+            i != 2 &&
+            !Get_String_Width(app_data->font, text[i].c_str(), &str_offset[i + 1])
+        ) return false;
+        str_offset[i] += (i > 0 ? str_offset[i - 1] : Offset.x);
 
         if (
             !text[i].empty() &&
@@ -253,7 +257,7 @@ Editor::Render_Line_Number(
             line_number.c_str(),
             0,
             &line_number_width,
-            NULL
+            nullptr
         )
     ) return true;
 

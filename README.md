@@ -12,6 +12,7 @@ To build this program, ensure that you have the following packages installed on 
 - **git**
 - **SDL3**
 - **SDL3_ttf**: Only install if your SDL3 package doesnt include SDL3_ttf
+- **fmt**
 - **meson**
 
 ## How to build
@@ -28,6 +29,11 @@ $ ./target/texed -h # Printing the help message
 
 All available configuration options are on `./config.hpp`,
 and you can customise the program further by changing the source code
+
+## Links
+
+- **SDL**: https://www.libsdl.org/
+- **fmt**: https://github.com/fmtlib/fmt
 
 ## License
 
