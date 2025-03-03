@@ -5,18 +5,6 @@
 
 #include <string>
 
-// Colours
-// #define COL_RESET "\e[0;0;0m"
-// #define COL_ERR "\e[1;31m"
-// #define COL_INFO "\e[1;32m"
-// #define COL_DEBUG "\e[1;36m"
-// #define COL_WHITE "\e[1;37m"
-
-// #define DEBUG_LABEL "\e[1;37m[\e[1;36mDEBUG\e[1;37m]:\e[0;0;0m"
-// #define INFO_LABEL "\e[1;37m[\e[1;32mINFO\e[1;37m]:\e[0;0;0m"
-// #define ERR_LABEL "\e[1;37m[\e[1;31mERROR\e[1;37m]:\e[0;0;0m"
-
-
 enum Direction : uint8_t {
     All,
     Left,
@@ -62,21 +50,16 @@ bool Get_String_Width(TTF_Font *font, const char *text, int32_t *w);
 /// \param c input char
 bool Is_Word_Bound(char c);
 
-// /// Logs error to SDL_Log
-// /// \param fmt c-styled format string / message
-// /// \param ... additional paramerer for format string
-// /// \warning this function calls SDL_GetError by itself
-// __attribute__((__format__ (__printf__, 1, 2)))
-// void Log_Err(const char *fmt, ...);
+/// Compares str a and b's length
+bool StrLen_Compare(std::string_view a, std::string_view b);
 
-// /// Logs info to SDL_Log
-// /// \param fmt c-styled format string / message
-// /// \param ... additional paramerer for format string
-// __attribute__((__format__ (__printf__, 1, 2)))
-// void Log_Info(const char *fmt, ...);
+/// An easier way to write SDL_SetRenderDrawColor
+bool Set_Draw_Color(SDL_Renderer *renderer, SDL_Color color);
 
-// /// Logs debug info to SDL_Log
-// /// \param fmt c-styled format string / message
-// /// \param ... additional paramerer for format string
-// __attribute__((__format__ (__printf__, 1, 2)))
-// void Log_Debug(const char *fmt, ...);
+/// Draws a filled rects with a border
+bool Draw_Border_Rect(
+    SDL_Renderer *render,
+    SDL_FRect *rect,
+    SDL_Color fill_color,
+    SDL_Color border_color
+);

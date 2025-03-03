@@ -38,8 +38,8 @@ bool
 FileHandler::Save_File(AppData *app_data)
 {
     EditorData *editor_data = &app_data->editor_data;
-    std::ofstream out_file(editor_data->file_name);
-    std::ifstream in_file(editor_data->file_name);
+    std::ofstream out_file(editor_data->file_path);
+    std::ifstream in_file(editor_data->file_path);
 
     if (!out_file || !in_file) {
         Log_Err("Failed to save file: failed to get streams");

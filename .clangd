@@ -2,7 +2,7 @@ InlayHints:
   ParameterNames: No
 
 CompileFlags:
-  Add: [--std=c++23, -Iinc]
+  Add: [--std=c++23, -Iinc, -Xclang, -fixit]
   Compiler: clang++
 
 Diagnostics:

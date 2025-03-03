@@ -7,6 +7,7 @@
 #include "../inc/arg_parse.hpp"
 #include "../inc/app_data.hpp"
 #include "../inc/editor.hpp"
+#include "../inc/utils.hpp"
 #include "log_utils.cpp"
 
 #include "../config.hpp"
@@ -16,19 +17,55 @@
 
 static const float ONE_SECOND_MS = 1000.0F;
 static const char *APP_NAME = "texed";
-static const char *APP_VERSION = "0.2.0";
+static const char *APP_VERSION = "0.2.1";
 static const char *APP_IDENTITY = "Simple Text Editor";
 
 
 void
 App_Quit(AppData *app_data)
 {
+    for (auto & c : app_data->editor_data.cache) {
+        SDL_DestroySurface(c.surface);
+        SDL_DestroyTexture(c.texture);
+    }
+
     if (app_data->font != nullptr) TTF_CloseFont(app_data->font);
     TTF_Quit();
     if (app_data->window != nullptr) SDL_DestroyWindow(app_data->window);
     if (app_data->renderer != nullptr) SDL_DestroyRenderer(app_data->renderer);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 };
+
+
+bool
+Handle_Scroll_Wheel(EditorData *editor_data, SDL_MouseWheelEvent *wheel)
+{
+    if ((SDL_GetModState() & SDL_KMOD_LSHIFT) != 0U) {
+        auto max_elem = std::ranges::max_element(
+            editor_data->file_content, StrLen_Compare
+        );
+
+        editor_data->scroll.x = std::clamp(
+            editor_data->scroll.x -
+            (int64_t)(wheel->y * scroll_multiplier),
+            0L,
+            (int64_t)max_elem->length()
+        );
+        return true;
+    }
+
+    if (wheel->y != 0){
+        editor_data->scroll.y = std::clamp(
+            editor_data->scroll.y -
+            (int64_t)(wheel->y * scroll_multiplier),
+            0L,
+            (int64_t)editor_data->file_content.size() - 1
+        );
+        return true;
+    }
+
+    return false;
+}
 
 
 SDL_AppResult
@@ -52,12 +89,12 @@ App_Event(AppData *app_data, SDL_Event *event)
         app_data->changed = true;
         break;
 
-    case SDL_EVENT_WINDOW_MOUSE_ENTER:
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
         app_data->focused = true;
         app_data->changed = true;
         break;
 
-    case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
         app_data->focused = false;
         app_data->changed = true;
         break;
@@ -70,13 +107,8 @@ App_Event(AppData *app_data, SDL_Event *event)
         break;
 
     case SDL_EVENT_MOUSE_WHEEL:
-        app_data->editor_data.scroll_offset = std::clamp(
-            (int64_t)app_data->editor_data.scroll_offset -
-            (int64_t)(event->wheel.y * scroll_multiplier),
-            (int64_t)0,
-            (int64_t)app_data->editor_data.file_content.size() - 1
-        );
-        app_data->changed = true;
+        app_data->changed =
+            Handle_Scroll_Wheel(&app_data->editor_data, &event->wheel);
         break;
 
     default:
@@ -109,11 +141,24 @@ App_Iterate(AppData *app_data, Offset base_offset)
         return false;
     }
 
-    if (!Decoration::Draw_Decoration(app_data, &base_offset))
-        return false;
+    if (
+        v_scrollbar_pos == -1 && show_decorations && show_v_scrollbar &&
+        !Decoration::Draw_Vertical_ScrollBar(app_data, &base_offset)
+    ) return false;
+
+    if (
+        show_decorations && show_file_name &&
+        !Decoration::Draw_File_Name(app_data, &base_offset)
+    ) return false;
+
 
     if (!Editor::Render_Loop(app_data, base_offset))
         return false;
+
+    if (
+        v_scrollbar_pos == 1 && show_decorations && show_v_scrollbar &&
+        !Decoration::Draw_Vertical_ScrollBar(app_data, &base_offset)
+    ) return false;
 
     if (!SDL_RenderPresent(app_data->renderer)) {
         Log_Err("Failed to update renderer");
@@ -156,14 +201,20 @@ Init_SDL(AppData *app_data)
 
     if (app_data->verbose) Log_Debug("Creating window and renderer");
 
-    SDL_CreateWindowAndRenderer(
-        APP_NAME,
-        initial_window_width,
-        initial_window_height,
-        SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE,
-        &app_data->window,
-        &app_data->renderer
-    );
+    if (
+        !SDL_CreateWindowAndRenderer(
+            APP_NAME,
+            initial_window_width,
+            initial_window_height,
+            SDL_WINDOW_HIGH_PIXEL_DENSITY |
+            (!window_always_floating ? SDL_WINDOW_RESIZABLE : 0),
+            &app_data->window,
+            &app_data->renderer
+        )
+    ) {
+        Log_Err("Failed to create window and renderer");
+        return false;
+    }
 
     if (app_data->window == nullptr) {
         Log_Err("Failed to create window");
@@ -237,10 +288,12 @@ main(int32_t argc, char **argv)
 
     Log_Info("Initialisation complete");
 
-    Offset offset(0, 0);
     SDL_AppResult result;
+    Offset offset(0, 0);
     SDL_Event event;
     int32_t end; // Return code
+
+    if (app_data.verbose) Log_Debug("Starting rendering process");
     while (true) {
         SDL_Delay(ONE_SECOND_MS / display_mode->refresh_rate);
 

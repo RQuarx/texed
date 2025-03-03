@@ -31,10 +31,15 @@ Editor::Init_Editor(fs::path &path)
 
     text_file.close();
 
-    return EditorData(
+    EditorData editor_data(
         file_content,
-        (path.has_relative_path() ? path.relative_path() : "no_name")
+        path
     );
+
+    while (editor_data.cache.size() <= editor_data.file_content.size())
+        editor_data.cache.emplace_back();
+
+    return editor_data;
 }
 
 
@@ -59,55 +64,24 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
     }
 
     editor_data->last_rendered_line = std::min(
-        editor_data->scroll_offset + (window_height / line_height),
-        editor_data->file_content.size()
+        editor_data->scroll.y + (window_height / line_height) - (offset.y / line_height),
+        (int64_t)editor_data->file_content.size()
     );
 
     // Starts off offset with the input offset
-    uint32_t y_offset = offset.y;
+    uint32_t y_offset = 0;
 
-    for (size_t i = editor_data->scroll_offset; i < editor_data->last_rendered_line; i++) {
-        std::string line = editor_data->file_content[i];
-        Offset render_offset(0, y_offset);
-        int32_t line_number_width;
-        int32_t text_padding;
+    for (int64_t i = editor_data->scroll.y; i < editor_data->last_rendered_line; i++) {
 
-        /*
-        Renders line index and
-        gets the width of the line index for the text offset
-        */
-        if (!Render_Line_Number(app_data, i, y_offset, line_number_width)) return false;
-        if (!Get_String_Width(app_data->font, "  ", &text_padding)) return false;
-        render_offset.x = offset.x + line_number_width + text_padding;
-
-        // Renders cursor
         if (
-            !cursor_rendered &&
-            cursor->y <= (int64_t)editor_data->last_rendered_line &&
-            cursor->y >= (int64_t)editor_data->scroll_offset
-        ) {
-            int64_t cursor_y = y_offset - (editor_data->scroll_offset * line_height);
-            if (!Render_Cursor(app_data, { render_offset.x, cursor_y })) return false;
-            cursor_rendered = true;
-        }
-
-        // Renders texts
-        if (
-            app_data->focused &&
-            app_data->editor_data.mode == Normal &&
-            cursor->y == (int64_t)i
-        ) {
-            if (
-                !Render_Inverted_Text(
-                    app_data,
-                    line,
-                    render_offset,
-                    foreground,
-                    Range(cursor->x, cursor->x)
-                )
-            ) return false;
-        } else if (!Render_Text(app_data, line, render_offset, foreground))
-            return false;
+            !Render_Line(
+                app_data,
+                { offset.x, y_offset + offset.y },
+                i,
+                line_height,
+                cursor_rendered
+            )
+        ) return false;
 
         y_offset += line_height;
     }
@@ -117,31 +91,122 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
 
 
 bool
+Editor::Render_Line(
+    AppData *app_data,
+    Offset offset,
+    int64_t line_index,
+    size_t line_height,
+    bool &cursor_rendered
+)
+{
+    EditorData *editor_data = &app_data->editor_data;
+    Cursor *cursor = &editor_data->cursor;
+
+    std::string line = editor_data->file_content[line_index];
+
+    if (editor_data->scroll.x >= line.length()) line = "";
+    else line = line.substr(editor_data->scroll.x);
+
+    Offset render_offset(offset.x, offset.y);
+    int32_t line_number_width;
+    int32_t text_padding;
+
+    if (
+        !Render_Line_Number(app_data, line_index, offset.y, line_number_width) ||
+        !Get_String_Width(app_data->font, "  ", &text_padding)
+    ) return false;
+    render_offset.x += line_number_width + text_padding;
+
+    if (
+        !cursor_rendered &&
+        cursor->y <= editor_data->last_rendered_line &&
+        cursor->y >= editor_data->scroll.y
+    ) {
+        int64_t cursor_y = offset.y - (editor_data->scroll.y * line_height);
+        if (!Render_Cursor(app_data, { render_offset.x, cursor_y })) return false;
+        cursor_rendered = true;
+    }
+
+    if (
+        app_data->focused &&
+        app_data->editor_data.mode == Normal &&
+        cursor->y == line_index
+    ) {
+        if (
+            !Render_Inverted_Text(
+                app_data,
+                line,
+                render_offset,
+                foreground,
+                Range(cursor->x, cursor->x)
+            )
+        ) return false;
+    } else {
+        while (cache_level == 1 && editor_data->cache.size() <= line_index)
+            editor_data->cache.emplace_back();
+
+        if (
+            !Render_Text(
+                app_data,
+                line,
+                render_offset,
+                foreground,
+                (cache_level == 1 ? &editor_data->cache[line_index] : nullptr)
+            )
+        ) return false;
+    }
+    return true;
+}
+
+
+bool
 Editor::Render_Text(
     AppData *app_data,
     std::string &text,
     Offset offset,
-    SDL_Color color
+    SDL_Color color,
+    Cache *cache
 )
 {
-    if (text.empty()) text = " ";
-    SDL_Surface *surface = TTF_RenderText_Blended(
-        app_data->font,
-        text.c_str(),
-        0,
-        color
+    bool should_cache = (
+        cache == nullptr || text != cache->cached_text ||
+        (cache->texture == nullptr || cache->surface == nullptr)
     );
+    SDL_Surface *surface = nullptr;
+    SDL_Texture *texture = nullptr;
 
-    if (surface == nullptr) {
-        Log_Err("Failed to create surface");
-        return false;
-    }
+    if (should_cache) {
+        surface = TTF_RenderText_Blended(
+            app_data->font,
+            (text.empty() ? " " : text.c_str()),
+            0,
+            color
+        );
 
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(app_data->renderer, surface);
+        if (surface == nullptr) {
+            Log_Err("Failed to create surface");
+            return false;
+        }
 
-    if (texture == nullptr) {
-        Log_Err("Failed to create texture from surface");
-        return false;
+        texture = SDL_CreateTextureFromSurface(app_data->renderer, surface);
+
+        if (texture == nullptr) {
+            Log_Err("Failed to create texture from surface");
+            SDL_DestroySurface(surface);
+            return false;
+        }
+
+        if (cache != nullptr) {
+            if (cache->surface != nullptr) SDL_DestroySurface(cache->surface);
+            if (cache->texture != nullptr) SDL_DestroyTexture(cache->texture);
+
+            cache->surface = surface;
+            cache->texture = texture;
+            cache->cached_text = text;
+        }
+    } else {
+        surface = cache->surface;
+        texture = cache->texture;
     }
 
     SDL_FRect rect = {
@@ -151,11 +216,17 @@ Editor::Render_Text(
         (float)surface->h
     };
 
-    bool return_val = SDL_RenderTexture(app_data->renderer, texture, nullptr, &rect);
-    SDL_DestroySurface(surface);
-    SDL_DestroyTexture(texture);
+    if (!SDL_RenderTexture(app_data->renderer, texture, nullptr, &rect)) {
+        Log_Err("Failed to render text texture");
+        return false;
+    }
 
-    return return_val;
+    if (cache == nullptr) {
+        SDL_DestroySurface(surface);
+        SDL_DestroyTexture(texture);
+    }
+
+    return true;
 }
 
 
@@ -215,7 +286,8 @@ Editor::Render_Line_Number(
     AppData *app_data,
     int64_t line_index,
     uint32_t y_offset,
-    int32_t &line_number_width
+    int32_t &line_number_width,
+    Cache *cache
 )
 {
     int8_t add = (zero_indexing ? 0 : 1);
@@ -246,7 +318,8 @@ Editor::Render_Line_Number(
             (
                 app_data->editor_data.cursor.y == line_index ?
                 foreground : alt_foreground
-            )
+            ),
+            cache
         )
     ) return false;
 

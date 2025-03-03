@@ -9,7 +9,9 @@ compile_flags = [
     '-O3',
     '-Wall',
     '-Wextra',
-    '-Wno-unused-parameter'
+    '-Wno-unused-parameter',
+    '-Xclang',
+    '-fix-what-you-can'
 ]
 
 inc_dir = include_directories('inc')

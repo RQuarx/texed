@@ -92,16 +92,15 @@ Movement::Move_Cursor_Up(EditorData *editor_data, bool is_ctrl_pressed)
     Cursor *cursor = &editor_data->cursor;
 
     if (is_ctrl_pressed) {
-        if (editor_data->scroll_offset > 0) {
-            editor_data->scroll_offset--;
+        if (editor_data->scroll.y > 0) {
+            editor_data->scroll.y--;
             return true;
         }
         return false;
     }
 
     if (cursor->y <= 0) return false;
-
-    cursor->y--;
+    editor_data->scroll.y = std::min(--cursor->y, editor_data->scroll.y);
 
     int64_t line_len =
         editor_data->file_content[cursor->y].length();
@@ -122,16 +121,19 @@ Movement::Move_Cursor_Down(EditorData *editor_data, bool is_ctrl_pressed)
     if (cursor->y >= (int64_t)editor_data->file_content.size() - 1) return false;
     if (
         is_ctrl_pressed &&
-        editor_data->scroll_offset < editor_data->file_content.size() - 1
+        editor_data->scroll.y < (int64_t)editor_data->file_content.size() - 1
     ) {
-        editor_data->scroll_offset++;
+        editor_data->scroll.y++;
         return true;
     }
 
-    cursor->y++;
-
-    if (cursor->y > (int64_t)editor_data->last_rendered_line)
-        editor_data->scroll_offset++;
+    if (++cursor->y >= (int64_t)editor_data->last_rendered_line) {
+        while (cursor->y >= (int64_t)editor_data->last_rendered_line) {
+            editor_data->last_rendered_line++;
+            editor_data->scroll.y++;
+        }
+    }
+    editor_data->scroll.y = std::min(cursor->y, editor_data->scroll.y);
 
     int64_t line_len =
         editor_data->file_content[cursor->y].length();

@@ -33,32 +33,44 @@ enum EditorMode : uint8_t {
     Command
 };
 
-struct EditorData {
-    std::vector<std::string> file_content;
-    std::string file_name;
-
-    size_t last_rendered_line = 0;
-    size_t scroll_offset = 0;
-
-    Cursor cursor;
-
-    EditorMode mode = Normal;
-
-    EditorData(std::vector<std::string> &file_content, std::string file_name) :
-        file_content(std::move(file_content)),
-        file_name(std::move(file_name)) {};
-
-    EditorData(EditorData *editor_data) :
-        file_content(editor_data->file_content),
-        file_name(editor_data->file_name) {};
-};
-
-
 struct Offset {
     int64_t x;
     int64_t y;
 
     Offset(int64_t _x, int64_t _y) : x(_x), y(_y) {};
+};
+
+struct Cache {
+    std::string_view cached_text;
+    SDL_Surface *surface;
+    SDL_Texture *texture;
+
+    Cache() : surface(nullptr), texture(nullptr) {}
+    Cache(std::string_view _cached_text, SDL_Surface *_surface, SDL_Texture *_texture) :
+        cached_text(_cached_text),
+        surface(_surface),
+        texture(_texture) {}
+};
+
+struct EditorData {
+    std::vector<std::string> file_content;
+    fs::path file_path;
+
+    size_t last_rendered_line = 0;
+    Offset scroll = { 0, 0 };
+
+    Cursor cursor;
+    std::vector<Cache> cache;
+
+    EditorMode mode = Normal;
+
+    EditorData(std::vector<std::string> &file_content, fs::path &file_path) :
+        file_content(std::move(file_content)),
+        file_path(std::move(file_path)) {}
+
+    EditorData(EditorData *editor_data) :
+        file_content(editor_data->file_content),
+        file_path(editor_data->file_path) {}
 };
 
 struct Range {
@@ -83,6 +95,15 @@ public:
     /// \return will return true on success, and false on failure
     static bool Render_Loop(struct AppData *app_data, struct Offset offset);
 
+    /// The main rendering logic
+    static bool Render_Line(
+        struct AppData *app_data,
+        struct Offset offset,
+        int64_t line_index,
+        size_t line_height,
+        bool &cursor_rendered
+    );
+
     /// Renders line number
     /// \param app_data AppData struct
     /// \param line_index current line index
@@ -93,7 +114,8 @@ public:
         struct AppData *app_data,
         int64_t line_index,
         uint32_t y_offset,
-        int32_t &line_number_width
+        int32_t &line_number_width,
+        Cache *cache = nullptr
     );
 
     /// Renders text
@@ -106,7 +128,8 @@ public:
         struct AppData *app_data,
         std::string &text,
         struct Offset offset,
-        SDL_Color color
+        SDL_Color color,
+        Cache *cache = nullptr
     );
 
     /// Renders the text colour to be inverted from start index to end index
@@ -131,3 +154,4 @@ public:
 
     Editor() = delete;
 };
+

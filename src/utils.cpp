@@ -105,102 +105,38 @@ Is_Word_Bound(char c)
 { return (std::isspace(c) > 0 || std::ispunct(c) > 0); }
 
 
-// void
-// Log_Err(const char *fmt, ...)
-// {
-//     time_t now = time(NULL);
-//     struct tm log_time;
-//     localtime_r(&now, &log_time);
-
-//     char time_buffer[20];
-//     strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", &log_time);
-
-//     char *log_message = nullptr;
-//     va_list args;
-//     va_start(args, fmt);
-
-//     if (vasprintf(&log_message, fmt, args) < 0)
-//         log_message = nullptr;
-
-//     va_end(args);
-
-//     if (log_message) {
-//         SDL_Log(
-//             "%s %s %s: %s",
-//             time_buffer,
-//             ERR_LABEL,
-//             log_message,
-//             SDL_GetError()
-//         );
-//         free(log_message);
-//     } else {
-//         SDL_Log(
-//             "%s %s %s",
-//             time_buffer,
-//             ERR_LABEL,
-//             SDL_GetError()
-//         );
-//     }
-// }
+bool
+StrLen_Compare(std::string_view a, std::string_view b)
+{ return a.length() < b.length(); }
 
 
-// void
-// Log_Info(const char *fmt, ...)
-// {
-//     time_t now = time(NULL);
-//     struct tm log_time;
-//     localtime_r(&now, &log_time);
-
-//     char time_buffer[20];
-//     strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", &log_time);
-
-//     char *log_message = nullptr;
-//     va_list args;
-//     va_start(args, fmt);
-
-//     if (vasprintf(&log_message, fmt, args) < 0)
-//         log_message = nullptr;
-
-//     va_end(args);
-
-//     if (log_message) {
-//         SDL_Log(
-//             "%s %s %s",
-//             time_buffer,
-//             INFO_LABEL,
-//             log_message
-//         );
-//         free(log_message);
-//     }
-// }
+bool
+Set_Draw_Color(SDL_Renderer *renderer, SDL_Color color)
+{
+    return
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+}
 
 
-// void
-// Log_Debug(const char *fmt, ...)
-// {
-//     time_t now = time(NULL);
-//     struct tm log_time;
-//     localtime_r(&now, &log_time);
+bool
+Draw_Border_Rect(
+    SDL_Renderer *render,
+    SDL_FRect *rect,
+    SDL_Color fill_color,
+    SDL_Color border_color
+)
+{
+    bool result = (
+        Set_Draw_Color(render, fill_color) &&
+        SDL_RenderFillRect(render, rect) &&
+        Set_Draw_Color(render, border_color) &&
+        SDL_RenderRect(render, rect)
+    );
 
-//     char time_buffer[20];
-//     strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", &log_time);
+    if (!result) {
+        Log_Err("Failed to render bordered rect");
+        return false;
+    }
 
-//     char *log_message = nullptr;
-//     va_list args;
-//     va_start(args, fmt);
-
-//     if (vasprintf(&log_message, fmt, args) < 0)
-//         log_message = nullptr;
-
-//     va_end(args);
-
-//     if (log_message) {
-//         SDL_Log(
-//             "%s %s %s",
-//             time_buffer,
-//             DEBUG_LABEL,
-//             log_message
-//         );
-//         free(log_message);
-//     }
-// }
+    return true;
+}
