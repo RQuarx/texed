@@ -23,7 +23,7 @@
     static const SDL_Color cursor = border;
 
     static const SDL_Color scrollbar_bar = background;
-    static const SDL_Color scrollbar_active = {85, 85, 85, 255};
+    static const SDL_Color scrollbar_active = border;
     static const SDL_Color scrollbar_border = border;
     static const SDL_Color scrollbar_alt_border = alt_border;
 
@@ -109,7 +109,7 @@
 /* Editor */
 
     // Text wrapping
-    static const bool text_wrapping = false;
+    static const bool text_wrapping = true;
 
 /* Rendering */
 

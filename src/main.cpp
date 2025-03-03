@@ -119,7 +119,7 @@ App_Event(AppData *app_data, SDL_Event *event)
 
 
 bool
-App_Iterate(AppData *app_data, Offset base_offset)
+App_Iterate(AppData *app_data)
 {
     if (!app_data->changed) return true;
 
@@ -143,21 +143,19 @@ App_Iterate(AppData *app_data, Offset base_offset)
 
     if (
         v_scrollbar_pos == -1 && show_decorations && show_v_scrollbar &&
-        !Decoration::Draw_Vertical_ScrollBar(app_data, &base_offset)
+        !Decoration::Draw_Vertical_ScrollBar(app_data, &app_data->editor_data.offset)
     ) return false;
 
     if (
         show_decorations && show_file_name &&
-        !Decoration::Draw_File_Name(app_data, &base_offset)
+        !Decoration::Draw_File_Name(app_data, &app_data->editor_data.offset)
     ) return false;
 
-
-    if (!Editor::Render_Loop(app_data, base_offset))
-        return false;
+    if (!Editor::Render_Loop(app_data)) return false;
 
     if (
         v_scrollbar_pos == 1 && show_decorations && show_v_scrollbar &&
-        !Decoration::Draw_Vertical_ScrollBar(app_data, &base_offset)
+        !Decoration::Draw_Vertical_ScrollBar(app_data, &app_data->editor_data.offset)
     ) return false;
 
     if (!SDL_RenderPresent(app_data->renderer)) {
@@ -166,6 +164,8 @@ App_Iterate(AppData *app_data, Offset base_offset)
     }
 
     app_data->changed = false;
+    app_data->editor_data.offset.x = 0;
+    app_data->editor_data.offset.y = 0;
     return true;
 }
 
@@ -252,9 +252,9 @@ main(int32_t argc, char **argv)
 
     if (verbose) Log_Debug("Creating editor & fetching file path");
     fs::path file_path = FileHandler::Fetch_File_Path(&arg_parse);
-    std::optional<EditorData> editor = Editor::Init_Editor(file_path);
+    auto editor = Editor::Init_Editor(file_path);
 
-    if (editor == nullopt) {
+    if (editor == nullptr) {
         Log_Err("Failed to create editor: {}", "path is invalid");
         return EXIT_FAILURE;
     }
@@ -289,7 +289,6 @@ main(int32_t argc, char **argv)
     Log_Info("Initialisation complete");
 
     SDL_AppResult result;
-    Offset offset(0, 0);
     SDL_Event event;
     int32_t end; // Return code
 
@@ -304,7 +303,7 @@ main(int32_t argc, char **argv)
             break;
         }
 
-        if (!App_Iterate(&app_data, offset)) {
+        if (!App_Iterate(&app_data)) {
             end = EXIT_FAILURE;
             break;
         }

@@ -58,6 +58,7 @@ struct EditorData {
 
     size_t last_rendered_line = 0;
     Offset scroll = { 0, 0 };
+    Offset offset = { 0, 0 };
 
     Cursor cursor;
     std::vector<Cache> cache;
@@ -87,13 +88,13 @@ public:
     /// Initialise Editor
     /// \param path text file path
     /// \return on success, will return EditorData. And will return nullopt on failure
-    static std::optional<EditorData> Init_Editor(fs::path &path);
+    static std::unique_ptr<EditorData> Init_Editor(fs::path &path);
 
     /// Loops containing all of the editor's rendering
     /// \param app_data AppData struct
     /// \param offset the offset of the editor's view
     /// \return will return true on success, and false on failure
-    static bool Render_Loop(struct AppData *app_data, struct Offset offset);
+    static bool Render_Loop(struct AppData *app_data);
 
     /// The main rendering logic
     static bool Render_Line(

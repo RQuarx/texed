@@ -12,11 +12,11 @@
 #include <array>
 
 
-std::optional<EditorData>
+std::unique_ptr<EditorData>
 Editor::Init_Editor(fs::path &path)
 {
     if (!fs::is_regular_file(path))
-        return nullopt;
+        return nullptr;
 
     std::vector<std::string> file_content;
 
@@ -31,23 +31,18 @@ Editor::Init_Editor(fs::path &path)
 
     text_file.close();
 
-    EditorData editor_data(
-        file_content,
-        path
-    );
-
-    while (editor_data.cache.size() <= editor_data.file_content.size())
-        editor_data.cache.emplace_back();
+    std::unique_ptr<EditorData> editor_data =
+        std::make_unique<EditorData>(file_content, path);
+    editor_data->cache.reserve(editor_data->file_content.size());
 
     return editor_data;
 }
 
 
 bool
-Editor::Render_Loop(AppData *app_data, Offset offset)
+Editor::Render_Loop(AppData *app_data)
 {
     EditorData *editor_data = &app_data->editor_data;
-    Cursor *cursor = &editor_data->cursor;
     int32_t line_height = TTF_GetFontHeight(app_data->font);
     int32_t window_height = 0;
     bool cursor_rendered = false;
@@ -64,26 +59,24 @@ Editor::Render_Loop(AppData *app_data, Offset offset)
     }
 
     editor_data->last_rendered_line = std::min(
-        editor_data->scroll.y + (window_height / line_height) - (offset.y / line_height),
+        editor_data->scroll.y + ((window_height - editor_data->offset.y) / line_height),
         (int64_t)editor_data->file_content.size()
     );
 
-    // Starts off offset with the input offset
-    uint32_t y_offset = 0;
-
-    for (int64_t i = editor_data->scroll.y; i < editor_data->last_rendered_line; i++) {
-
+    for (
+        int64_t i = editor_data->scroll.y, y_offset = 0;
+        i < (int64_t)editor_data->last_rendered_line + 1;
+        i++, y_offset += line_height
+    ) {
         if (
             !Render_Line(
                 app_data,
-                { offset.x, y_offset + offset.y },
+                { editor_data->offset.x, editor_data->offset.y + y_offset },
                 i,
                 line_height,
                 cursor_rendered
             )
         ) return false;
-
-        y_offset += line_height;
     }
 
     return true;
@@ -102,9 +95,13 @@ Editor::Render_Line(
     EditorData *editor_data = &app_data->editor_data;
     Cursor *cursor = &editor_data->cursor;
 
-    std::string line = editor_data->file_content[line_index];
+    std::string line = (
+        line_index < (int64_t)editor_data->file_content.size() ?
+        editor_data->file_content[line_index] :
+        ""
+    );
 
-    if (editor_data->scroll.x >= line.length()) line = "";
+    if (editor_data->scroll.x >= (int64_t)line.length()) line = "";
     else line = line.substr(editor_data->scroll.x);
 
     Offset render_offset(offset.x, offset.y);
@@ -119,7 +116,7 @@ Editor::Render_Line(
 
     if (
         !cursor_rendered &&
-        cursor->y <= editor_data->last_rendered_line &&
+        cursor->y <= (int64_t)editor_data->last_rendered_line &&
         cursor->y >= editor_data->scroll.y
     ) {
         int64_t cursor_y = offset.y - (editor_data->scroll.y * line_height);
@@ -142,7 +139,7 @@ Editor::Render_Line(
             )
         ) return false;
     } else {
-        while (cache_level == 1 && editor_data->cache.size() <= line_index)
+        while (cache_level == 1 && (int64_t)editor_data->cache.size() <= line_index)
             editor_data->cache.emplace_back();
 
         if (
@@ -178,7 +175,7 @@ Editor::Render_Text(
     if (should_cache) {
         surface = TTF_RenderText_Blended(
             app_data->font,
-            (text.empty() ? " " : text.c_str()),
+            (text.empty() ? " " : text.data()),
             0,
             color
         );
@@ -232,11 +229,11 @@ Editor::Render_Text(
 
 bool
 Editor::Render_Inverted_Text(
-    struct AppData *app_data,
+    AppData *app_data,
     std::string &line,
-    struct Offset Offset,
+    Offset Offset,
     SDL_Color color,
-    struct Range range
+    Range range
 )
 {
     if (line.empty()) line = " ";
